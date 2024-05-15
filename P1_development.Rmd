@@ -1,0 +1,212 @@
+```{r setup, include=FALSE}
+# knitr::opts_chunk(echo = TRUE)
+
+## clean the R environment
+rm(list = ls())
+freshr::freshr()
+
+## load packages
+library(here)
+library(tidyverse)
+library(testthat)
+library(usethis)
+library(devtools)
+
+load_all()
+
+
+# ?testthat::test_file
+# ?devtools::test
+# path <- testthat_example("success")
+# test_file(path)
+# test_file(path, reporter = "minimal")
+
+## check the directory for the file
+here::dr_here()
+here::set_here()
+```
+
+## initiation
+
+```{r}
+packageVersion("devtools")
+## to create a package
+# create_package("~/Desktop/project/plmlmm")
+use_mit_license()
+
+## look for R home directory
+# R.home()
+## look for R code base
+# system.file()
+## look at the files in the same directory
+here::here() %>%
+  list.files()
+# list.dirs()
+# here::here() %>%
+#   list.dirs(full.names = FALSE,
+#             recursive = TRUE)
+```
+
+## use_git
+
+```{r}
+## use git and github for the package
+use_git()
+usethis::use_git_remote("origin", 
+                        url = NULL, 
+                        overwrite = TRUE)
+
+```
+
+## use data
+
+It’s a good idea to store the code that generates your individual internal data objects, as well as the use_data() call that writes all of them into R/sysdata.rda. This is workflow code that belongs below data-raw/, not below R/. usethis::use_data_raw() can be used to initiate the use of data-raw/ or to initiate a new .R script there. If your package is uncomfortably large, experiment with different values of compress in use_data(internal = TRUE).
+
+```{r}
+# usethis::use_data(tsa_train)
+# usethis::use_data(tsa_test)
+# usethis::use_data_raw("tsa_train")
+# usethis::use_data_raw("tsa_test")
+
+tsa_test <- tsa_test %>%
+  mutate(baseline0 = baseline) %>%
+  dplyr::select(-baseline)
+# 
+tsa_train<- tsa_train %>%
+  mutate(baseline0 = baseline) %>%
+  dplyr::select(-baseline)
+
+usethis::use_data(tsa_base, tsa_outcome,
+                  tsa_pain, tsa_rom,
+                  tsa_train, tsa_test,
+                  internal = TRUE,
+                  overwrite = TRUE)
+```
+
+## use package
+
+```{r}
+use_package("brokenstick", type = "Depends")
+use_package("broom.mixed", type = "Depends")
+use_package("plotly", type = "Depends")
+use_package("gamlss", type = "Depends")
+use_package("here", type = "Depends")
+use_package("JMbayes", type = "Depends")
+use_package("lme4", type = "Depends")
+use_package("matrixcalc", type = "Depends")
+use_package("MASS", type = "Depends")
+use_package("nlme", type = "Depends")
+use_package("tidyverse", type = "Depends")
+use_package("tibble", type = "Depends")
+use_package("readr")
+use_package("rjags", type = "Depends")
+
+use_package("stringr")
+use_package("splines", type = "Depends")
+use_package("shiny", type = "Depends")
+
+devtools::install_github("Goodgolden/plm2024")
+```
+
+## use_r & use_test
+
+```{r}
+# use_r("00_utils")
+# use_r("01_impute")
+# use_r("02_distance")
+# use_r("03_prediction")
+# use_r("04_people-like-me")
+# use_r("05_simulation")
+# use_r("06_lmmpred)
+use_r("07_summarization")
+use_r("00_data")
+
+use_test("01_impute")
+# use_test("02_distance")
+# use_test("05_simulation")
+```
+
+## test_check
+
+```{r}
+test_check("plm2024")
+```
+
+## environment
+
+```{r}
+load_all()
+exists("people_like_me",
+       # where = globalenv(), 
+       inherits = FALSE)
+#> [1] FALSE
+
+# ?exists Environment Access
+env <- environment(plm2024)
+exists("plm", 
+       where = env,
+       # where = globalenv(), 
+       inherits = FALSE)
+```
+
+## documents
+
+Use `Ctrl + .` in RStudio and start typing 'DESCRIPTION' to activate a helper that makes it easy to open a file for editing.
+
+In addition to a filename, your hint can be a function name.
+
+```{r}
+## document the description
+document()
+## always check 
+## it's good to establish the habit of checking this often.
+check()
+```
+
+```{r}
+load_all()
+# rm(list = c("distance_df", "linear_impute", "match", "norm2", "not_all_na", "not_any_na",
+#   "people_like_me", "plm_ind_plot", "predict_gamlss", "single_df", "soft_fun"))
+## `covr` package to track 
+## what proportion of your package’s source code
+## is exercised by the tests.
+# install.packages("covr")
+library("covr")
+report()
+test()
+```
+
+**Cmd + Shift + T (macOS)** for test
+
+## readme
+
+```{r}
+## add description files to the package
+# usethis::use_tidy_description()
+
+
+## add datasets to the package
+
+
+## build up a readme file and push into github
+use_readme_rmd()
+build_readme()
+
+usethis::use_roxygen_md()
+document()
+
+```
+
+Here is a typical sequence of calls when using devtools for package development:
+
+-   Edit one or more files below R/.
+-   document() (if you’ve made any changes that impact help files or NAMESPACE)
+-   load_all()
+-   Run some examples interactively.
+-   test() (or test_file())
+-   check()
+
+```{r}
+load_all()
+plm2024:::plm_shiny()
+```

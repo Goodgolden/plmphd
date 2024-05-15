@@ -1,0 +1,23 @@
+# Working log {.unnumbered}
+
+Here is the contents for Randy's thesis
+
+## May 2024
+
+### 2024-05-15
+
+- [x] committee meeting date 21 24 25 of May 27 28th
+
+- [x] the proposal for the PhD
+
+- [x] asking Brandie for University policy Stef
+
+- [x] send email to Stef by Monday.
+
+- [x] `r praise::praise()`
+
+
+```{r}
+praise::praise()
+```
+

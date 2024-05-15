@@ -1,0 +1,164 @@
+---
+title: "01_package_development"
+author: "randy"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warnings = FALSE,
+                      message = FALSE,
+                      comment = "#>",
+                      #results = "hide",
+                      digits = 4,
+                      error = FALSE)
+
+## clean the R environment
+graphics.off()
+rm(list = ls())
+freshr::freshr()
+
+## load packages
+library(here, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+library(gtsummary, quietly = TRUE)
+library(flextable, quietly = TRUE)
+
+## check the directory for the file
+here::dr_here()
+here::set_here()
+
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+
+```
+
+## Prerequisites
+
+```{r}
+library(installr)
+install.rtools()
+library(testthat)
+library(usethis)
+```
+
+-   **DESCRIPTION** contains information like the title, description, and authors of the package, and requires some manual editing by you.
+
+-   **NAMESPACE** lists all the functions exported by the package (so that users can use them) and the functions imported from other packages.
+
+-   The **R** directory contains your code
+
+-   **man** contains the help files.
+
+-   **src** contains C, C++, or FORTRAN source code. We’ll make use of this directory in the next chapter.
+
+-   **tests** contains our unit tests, which we’ll make use of right away!
+
+### Including Tests in Your Package
+
+-   testing with **testthat**:
+    -   a directory of R files containing our tests
+    -   another R script to run them. ***testthat.R***
+
+`test_check()` as being the package equivalent of `test dir()`
+
+the **testthat** package is listed in the *Suggests* field of the **DESCRIPTION** file.
+
+```{r eval=FALSE, include=FALSE}
+library(devtools)
+use_testthat("path/to/your/package")
+```
+
+```{r eval=FALSE, include=FALSE}
+descriptionDetails <- list(
+  Title = "People-Like-Me methods",
+  Version = "0.0-1",
+  Maintainer  = "Randy Jin <xin.2.jin@cuanschutz.edu>",
+  Description = "the plm fns, plus tests!",
+  License     = "GPL-3",
+  URL = "https://github.com/Goodgolden/plm2024",
+  BugReports  = "https://github.com/Goodgolden/plm2024/issues")
+
+create("plm2024", description = descriptionDetails)
+
+```
+
+```{r}
+# * Adding testthat to Suggests
+# * Creating ‘tests/testthat‘.
+# * Creating ‘tests/testthat.R‘ from template.
+## this is the function to create the entire 
+## testthat folder and add testthat.R
+## this is not the test.R for single function
+use_thattest("euclidean_df")
+use_test("euclidean_df")
+use_test("02_distance")
+```
+
+```{r}
+library(fs)
+library(tidyverse)
+
+bind_rows(
+  tibble(
+    type = "R",
+    path = dir_ls("R/", regexp = "\\.[Rr]$"),
+    name = as.character(path_ext_remove(path_file(path))),),
+  tibble(
+    type = "test",
+    path = dir_ls("tests/testthat/", 
+                  regexp = "/test[^/]+\\.[Rr]$"),
+    name = as.character(path_ext_remove(str_remove(path_file(path),
+                                                   "^test[-_]"))),)) %>%
+  pivot_wider(names_from = type, values_from = path) %>%
+  print(n = Inf)
+```
+
+```{r}
+build("plm2024")
+check("plm2024")
+pkgbuild::check_build_tools(debug = TRUE)
+```
+
+-   ensuring the DESCRIPTION is correctly formed.
+-   making sure that all the necessary dependency packages are declared in the DESCRIPTION and NAMESPACE files.
+-   that all the help pages are correctly formed (and that all the arguments in the functions they describe are mentioned).
+-   checking the R code for syntax errors.
+-   making sure that all the necessary files are present, and that there are no unknown files.
+-   running all the examples in the help pages, and making sure there are no errors.
+-   running all the tests, and making sure they all pass.
+
+```{r}
+devtools::install_github("username/packagename") 
+devtools::install_bitbucket("username/packagename")
+use_github_action()
+## Sets up continuous integration (CI) for an R package 
+# that is developed on GitHub using GitHub Actions. 
+# CI can be used to trigger various operations for 
+# each push or pull request, 
+# e.g. running ⁠R CMD check⁠ or building and deploying a pkgdown site.
+?use_github_action
+```
+
+### Continuous integration (CI)
+
+Continuous integration (CI) services make checking your package on lots of platforms much less effort. The idea is that you hook the CI service to github or Bitbucket (or whatever project hosting platform you are using), then whenever you push changes to the platform, the CI service will automatically build and check your package.
+
+-   Travis CI (<https://travis-ci.org>)
+-   AppVeyor (<http://www.appveyor.com>)
+-   SemaphoreCI (<https://semaphoreci.com>).
+
+### Testing Coverage
+
+As your package grows, it’s easy to “just quickly add a feature,” and not get around to testing it. This is perfectly normal development behaviour
+
+```{r}
+load_all()
+library(covr)
+coverage <- package_coverage()
+percent_coverage(coverage)
+
+use_coverage("plm2024", type = "codecov")
+```

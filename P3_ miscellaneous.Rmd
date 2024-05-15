@@ -1,0 +1,252 @@
+---
+title: "02_miscellaneous"
+author: "randy"
+date: '`r Sys.Date()`'
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warnings = FALSE,
+                      message = FALSE,
+                      comment = "#>",
+                      #results = "hide",
+                      digits = 4,
+                      error = TRUE)
+
+## clean the R environment
+graphics.off()
+rm(list = ls())
+freshr::freshr()
+
+## load packages
+library(here, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+library(gtsummary, quietly = TRUE)
+library(flextable, quietly = TRUE)
+
+## check the directory for the file
+# here::dr_here()
+here::set_here()
+
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+
+```
+
+# Notes
+
+## Coding and functions
+
+### Referencing variables
+
+```{r}
+data(mtcars)
+
+## a problematic function with error
+
+simple_function <- function(dataset, col_name){
+  dataset %>%
+    group_by(col_name) %>%
+    summarise(mean_speed = mean(speed))
+}
+simple_function(cars, "dist")
+
+## still get problem with the col_name
+simple_function1 <- function(dataset, col_name){
+  col_name <- as.name(col_name)
+  dataset %>%
+    group_by(col_name) %>%
+    summarise(mean_speed = mean(speed))
+}
+
+
+simple_function1(cars, "dist")
+```
+
+To be able to do that, we need to use a framework that was introduced in the {tidyverse}, called tidy evaluation.
+
+Most dplyr verbs use tidy evaluation in some way. Tidy evaluation is a special type of non-standard evaluation used throughout the tidyverse.
+
+[What is data-masking and why do I need](https://rlang.r-lib.org/reference/topic-data-mask.html)
+
+#### The `enquo()` - `!!()`
+
+Now that col_name is (R programmers call it) quoted, or defused, we need to tell group_by() to evaluate the input as is. This is done with !!(), called the injection operator, which is another {rlang} function.
+
+```{r}
+simple_function2 <- function(dataset, col_name, value){
+  col_name <- enquo(col_name)
+  dataset %>%
+    filter((!!col_name) == value) %>%
+    summarise(mean_cyl = mean(cyl))
+}
+
+simple_function2(mtcars, am, 1)
+```
+
+enclosed `!!col_name` inside parentheses. This is because operators such as `==` have precedence over `!!`, so you have to be explicit. Also, notice that I didn’t have to quote 1. This is because it’s standard variable, not a column inside the dataset. Let’s make this function a bit more general.
+
+```{r}
+## take more than one col_name and use the value
+simple_function3 <- function(dataset, filter_col, mean_col, value){
+  filter_col <- enquo(filter_col)
+  mean_col <- enquo(mean_col)
+  dataset %>%
+    filter((!!filter_col) == value) %>%
+    summarise(mean((!!mean_col)))
+}
+
+simple_function3(mtcars, am, cyl, 1)
+```
+
+#### The `quos()` - `!!!()`
+
+Because these dots contain more than one variable, you have to use `quos()` instead of `enquo()`. This will put the arguments provided via the dots in a list. Then, because we have a list of columns, we have to use `summarise_at()`.
+
+So if you didn’t do them, go back to them and finish them first. Doing the exercise will also teach you what `vars()` and `funs()` are. The last thing you have to pay attention to is to use `!!!()` if you used `quos()`. So 3 `!` instead of only 2.
+
+```{r}
+## making the function more convienient
+simple_function4 <- function(dataset, ...){
+  col_vars <- quos(...)
+  dataset %>%
+    summarise_at(vars(!!!col_vars), 
+                 list(~ mean(., trim = .2), ~ median(., na.rm = TRUE)))
+}
+
+simple_function4(mtcars, am, cyl, mpg)
+```
+
+Using ... with !!!() allows you to write very flexible functions.
+
+If you need to be even more general, you can also provide the summary functions as arguments of your function, but you have to rewrite your function a little bit.
+
+You might be wondering where the `quos()` went? Well because now we are passing two lists, a list of columns that we have to quote, and a list of functions, that we also have to quote, we need to use `quos()` when calling the function:
+
+```{r}
+simple_function5 <- function(dataset, cols, funcs){
+  dataset %>%
+    summarise_at(vars(!!!cols), funs(!!!funcs))
+}
+
+simple_function5(mtcars, quos(am, cyl, mpg), quos(mean, sd, sum))
+```
+
+To conclude this function, I should also talk about `as_label()` which allows you to change the name of a variable, for instance if you want to call the resulting column `mean_mpg` when you compute the mean of the `mpg` column:
+
+```{r}
+simple_function6 <- function(dataset, filter_col, mean_col, value){
+
+  filter_col <- enquo(filter_col)
+  mean_col <- enquo(mean_col)
+  mean_name <- paste0("mean_", as_label(mean_col))
+  
+  dataset |>
+    filter((!!filter_col) == value) |>
+    summarise(!!(mean_name) := mean((!!mean_col)))
+}
+
+simple_function6(mtcars, filter_col = cyl,
+                 value = 6, mean_col = mpg) 
+
+```
+
+Pay attention to the := operator in the last line. This is needed when using as_label().
+
+#### Using `{{}}`
+
+The previous section might have been a bit difficult to grasp, but there is a simplified way of doing it, which consists in using `{{}}`, introduced in `{rlang}` version 0.4.0. The suggested pronunciation of `{{}}` is curly-curly, but there is no consensus yet.
+
+```{r}
+how_many_na <- function(dataframe, column_name){
+  dataframe %>%
+    filter(is.na(column_name)) %>%
+    count()
+}
+
+data(starwars)
+
+how_many_na(starwars, hair_color)
+```
+
+```{r}
+summarise_groups <- function(dataframe, grouping_var, column_name){
+
+  grouping_var <- enquo(grouping_var)
+  column_name <- enquo(column_name)
+  mean_name <- paste0("mean_", as_label(column_name))
+
+  dataframe %>%
+    group_by(!!grouping_var) %>%  
+    summarise(!!(mean_name) := mean(!!column_name, na.rm = TRUE))
+}
+
+summarise_groups1 <- function(dataframe, grouping_var, col_names) {
+  dataframe %>%
+    group_by({{ grouping_var }}) %>%
+    summarise({{ col_names }} := mean({{ col_names }},
+                                        na.rm = TRUE))
+}
+```
+
+however, and if you want to modify the column names, for instance in this case return "mean_height" instead of height you have to keep using the `enquirer()`-`!!` syntax.
+
+#### Anonymous functions
+
+Have no identity, no name, but still do stuff! They will not live in the global environment. Like a person without a name, you would not be able to look the person up in the address book.
+
+Since version 4.1, R introduced a short-hand for defining anonymous functions:
+
+```{r}
+map(c(1, 2, 3, 4), \(x)(1 / sqrt(x)))
+```
+
+## New pipe `|>`
+
+1.  The command to clear all variables from the environment (workspace) `rm(list=ls())`
+2.  In RStudio the keyboard shortcut for the pipe operator %\>% is Ctrl+Shift+M (Windows) or Cmd+Shift+M (Mac).
+3.  In RStudio the keyboard shortcut for the assignment operator `<-` is Alt + - (Windows) or Option + - (Mac).
+4.  In RStudio use Ctrl+L to clear all the code from your console.
+5.  If you’re typing in a script in the source editor pane but you want to move the curser to the console use Ctrl+2. You can also use Ctrl+1 to move the curser back to the source editor.
+6.  To run a line of code from the source editor use Ctrl+Enter (Windows) or Cmd+Enter (Mac).
+7.  You can “tear” code panes or data view panes out of the RStudio window which can be particularly useful on big screens or when using multiple monitors.
+8.  You can scroll through your command history by clicking Ctrl + ↑ (Windows) or Cmd + ↑ (Mac). 1. If you know what the line of code you’re looking for started with, type the first few characters and then press Ctrl/Cmd + ↑ and it will only search a matching subset of the history. 1.You can rename all instances of a variable name by highlighting one instance of the variable name and then using `Code > Rename` in Scope. This is better than using `Edit > Replace` and `Find` because it only looks for whole word matches.
+
+## Example of in-paper cite Rmarkdown
+
+@tbl-putting-functions-in-files presents some examples from the actual source of the [tidyr package](http://tidyr.tidyverse.org/) at version 1.1.2. There are some departures from the hard-and-fast rules given above, which illustrates that there's a lot of room for judgment here.
+
+```{r include = FALSE}
+library(tidyverse)
+
+tidyr_separate <- tibble(
+  `Organising principle` = "Main function plus helpers",
+  `Source file` = "[tidyr/R/separate.R](https://github.com/tidyverse/tidyr/blob/v1.1.2/R/separate.R)",
+  Comments = "Defines the user-facing `separate()` (an S3 generic), a `data.frame` method, and private helpers"
+)
+
+tidyr_rectangle <- tibble(
+  `Organising principle` = "Family of functions",
+  `Source file` = "[tidyr/R/rectangle.R](https://github.com/tidyverse/tidyr/blob/v1.1.2/R/rectangle.R)",
+  Comments = "Defines a family of functions for \"rectangling\" nested lists (`hoist()` and the `unnest()` functions), all documented together in a big help topic, plus private helpers"
+)
+
+tidyr_uncount <- tibble(
+  `Organising principle` = "One function",
+  `Source file` = "[tidyr/R/uncount.R](https://github.com/tidyverse/tidyr/blob/v1.1.2/R/uncount.R)",
+  Comments = "Defines exactly one function, `uncount()`, that's not particulary large, but doesn't fit naturally into any other `.R` file"
+)
+ 
+dat <- bind_rows(tidyr_uncount, tidyr_separate, tidyr_rectangle)
+```
+
+```{r}
+#| echo: false
+#| label: tbl-putting-functions-in-files
+#| tbl-cap: Different ways to organize functions in files.
+knitr::kable(dat)
+```

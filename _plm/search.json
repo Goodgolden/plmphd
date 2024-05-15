@@ -1,0 +1,36 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "PhD: People-Like-Me",
+    "section": "",
+    "text": "This is a Quarto book for People-Like-Me project."
+  },
+  {
+    "objectID": "intro.html",
+    "href": "intro.html",
+    "title": "Introduction",
+    "section": "",
+    "text": "This is a book created from markdown and executable code for Randy’s PhD dissertation."
+  },
+  {
+    "objectID": "0_todo.html",
+    "href": "0_todo.html",
+    "title": "Working log",
+    "section": "",
+    "text": "May 2024",
+    "crumbs": [
+      "Working log"
+    ]
+  },
+  {
+    "objectID": "0_todo.html#may-2024",
+    "href": "0_todo.html#may-2024",
+    "title": "Working log",
+    "section": "",
+    "text": "2024-05-15\n\ncommittee meeting date 21 24 25 of May 27 28th\nthe proposal for the PhD\nasking Brandie for University policy Stef\nsend email to Stef by Monday.\nYou are cat’s meow!\n\n\nCodepraise::praise()\n\n[1] \"You are premium!\"",
+    "crumbs": [
+      "Working log"
+    ]
+  }
+]
