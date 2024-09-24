@@ -1,0 +1,566 @@
+---
+title: "Single Anchor Time"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warnings = FALSE,
+                      message = FALSE,
+                      comment = "#>",
+                      #results = "hide",
+                      digits = 4,
+                      error = FALSE)
+
+## clean the R environment
+graphics.off()
+rm(list = ls())
+freshr::freshr()
+
+## load packages
+library(here, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+library(gtsummary, quietly = TRUE)
+library(flextable, quietly = TRUE)
+devtools::load_all()
+
+## check the directory for the file
+# here::dr_here()
+# here::set_here()
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+```
+
+```{css, echo=FALSE}
+.scroll-100 {
+  max-height: 300px;
+  max-width: 1000px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+## Goal for this chapter
+
+-   [x] to rewrite the function for single anchor time plm
+
+    -   [x] the function is in `R/04_plm.R`
+
+    -   [x] other functions need to be updated
+
+-   [x] cross-validation for time
+
+-   [x] cross-validation for matching numbers
+
+-   [x] comparison for plm and lmm
+
+-   [x] simulation study for nonlinear datasets (1000 datasets)
+
+## Single-Anchor-Time PLM
+
+Here is the function to run the single anchor time for the linear model. The code, for cross validation for different number of matches and different anchor time, is in the file `01_single_anchor_R`.
+
+```{r}
+#| eval: FALSE
+load("~/Desktop/plmphd/R/train_test.rda")
+train1 <- train %>%
+  group_by(id) %>%
+  summarise(
+    ht0 = min(ht),
+    age0 = min(age)
+  )
+
+train2 <- full_join(train, train1, by = "id") %>%
+  mutate(sid = "S") %>%
+  unite(id, sid, id, sep = "")
+
+test1 <- test %>%
+  group_by(id) %>%
+  summarise(
+    ht0 = min(ht),
+    age0 = min(age)
+  )
+
+test2 <- full_join(test, test1, by = "id") %>%
+  mutate(sid = "S") %>%
+  unite(id, sid, id, sep = "") 
+
+bsk <- c(3, 6, 9, 12)
+at <- 10
+mn <- 15
+
+lf <- "ht ~ sex + sex:ht0 + 
+              age + age:ht0 + 
+              genotype + genotype:ht0 + 
+              ethnic + ethnic:ht0 + ht0"
+
+gf <- "ht ~ cs(time, df = 3)"
+gs <- "~ cs(time, df = 1)"
+
+plm_s_t10_n15 <- 
+  plm_single(train_data = train2,
+             test_data = test2,
+             outcome_var = "ht",
+             time_var = "time",
+             id_var = "id",
+             tmin = 3,
+             tmax = 17,
+             brokenstick_knots = bsk,
+             anchor_time = at,
+             linear_formula = lf,
+             gamlss_formula = gf,
+             gamlss_sigma = gs,
+             match_number = mn,
+             match_plot = FALSE,
+             predict_plot = FALSE) 
+
+
+
+```
+
+## Summary for the cross validation
+
+```{r}
+#| eval: false
+meanout <- function(dataset,
+                    term = c("bias", "mse", "coverage50",
+                             "coverage80", "coverage90"),
+                    ...){
+  result <- dataset %>%
+    map("centiles_observed")
+  if (term != "mse") {
+    result <- result %>%
+      map(term) %>%
+      map(~mean(., na.rm = TRUE)) %>%
+      unlist() %>%
+      mean()
+  } else {
+    result <- result %>%
+      map(~.$bias ^2) %>%
+      map(~mean(., na.rm = TRUE)) %>%
+      unlist() %>%
+      mean()
+  }
+  return(result)
+}
+
+
+meanall <- function(dataset,
+                    ...){
+  bias <- meanout(dataset, "bias")
+  mse <- meanout(dataset, "mse")
+  cov50 <- meanout(dataset, "coverage50")
+  cov80 <- meanout(dataset, "coverage80")
+  cov90 <- meanout(dataset, "coverage90")
+  return(list(bias = bias,
+              mse = mse,
+              cov50 = cov50,
+              cov80 = cov80,
+              cov90 = cov90))
+}
+
+
+summary_s_t12 <- summary_s_t12 %>%
+  mutate(nmatch = 1:50)
+
+save(summary_s_n10, 
+     summary_s_n15,
+     summary_s_n20,
+     summary_s_n25, 
+     summary_s_n30,
+     summary_s_t12,
+     file = paste0("results/summary_all_tn_",
+                   Sys.Date(),
+                   ".rdata"))
+```
+
+### summary and figures for t11
+
+Here we show the summary of the cross validation for different number of matches and different anchor time. The best is for matching number is around 25 to 30.
+
+```{r}
+load("results/summary_all_tn_2024-08-06.rdata")
+
+s_t12bias <- summary_s_t12 %>%
+  ggplot() +
+  geom_line(aes(x = nmatch, y = bias), 
+            color = "#005d5d") 
+s_t12mse <- summary_s_t12 %>%
+  mutate(rmse = sqrt(mse)) %>%
+  ggplot() +
+  # geom_line(aes(x = nmatch, y = bias), color = "blue") +
+  geom_line(aes(x = nmatch, y = rmse),
+            color = "#750e13") 
+s_t12cr50 <- summary_s_t12 %>% 
+  ggplot() +
+  geom_line(aes(x = nmatch, y = cov50), 
+            color = "#0288D1") 
+s_t12cr80 <- summary_s_t12 %>%
+  ggplot() +
+  # geom_line(aes(x = nmatch, y = bias), color = "blue") +
+  geom_line(aes(x = nmatch, y = cov80),
+            color = "#0277BD") 
+s_t12cr90 <- summary_s_t12 %>%
+  ggplot() +
+  # geom_line(aes(x = nmatch, y = bias), color = "blue") +
+  geom_line(aes(x = nmatch, y = cov90), 
+            color = "#01579B")
+```
+
+```{r}
+#| fig-width: 6
+#| fig-height: 7
+s_t12bias + theme_bw() + theme(legend.position = "none") + 
+  ylab("MAE") + xlab("Number of Matches")
+s_t12mse + theme_bw() + theme(legend.position = "none") + 
+  ylab("RMSE") + xlab("Number of Matches")
+
+
+s_t12cr50 + theme_bw() + theme(legend.position = "none") + 
+  ylab("CR50%") + xlab("Number of Matches")
+s_t12cr80 + theme_bw() + theme(legend.position = "none") + 
+  ylab("CR80%") + xlab("Number of Matches")
+s_t12cr90 + theme_bw() + theme(legend.position = "none") + 
+  ylab("CR90%") + xlab("Number of Matches")
+
+library(ggpubr)
+
+figure1 <- ggarrange(s_t12bias + theme_bw() + 
+                       theme(legend.position = "none",
+                             axis.title.x=element_blank()) + 
+                       ylab("MAE"),
+                    # + theme(axis.text.x=element_blank()),
+                    s_t12mse + theme_bw() + 
+                      theme(legend.position = "none",
+                            axis.title.x=element_blank()) + 
+                      ylab("RMSE"),
+                    # + theme(axis.text.x=element_blank()),
+                    # cov50_plot,
+                    # + theme(axis.text.x=element_blank()), 
+                    s_t12cr90 + theme_bw() + 
+                      theme(legend.position = "none") + 
+                      ylab("CR90%") + 
+                      xlab("Number of Matches"), 
+                    # + theme(axis.text.x=element_blank()),
+                    ncol = 1, nrow = 3)
+
+figure1
+ggsave(paste0("figures/S03_single_cross-validation_", Sys.Date(), ".png"))
+```
+
+```{r}
+#| eval: false
+s_n10bias <- summary_s_n10 %>% 
+  ggplot() +
+  geom_line(aes(x = time,  y = bias), 
+            color = "#005d5d") 
+s_n10mse <- summary_s_n10 %>%
+  mutate(rmse = sqrt(mse)) %>%
+  ggplot() +
+  # geom_line(aes(x = time,  y = bias), color = "blue") +
+  geom_line(aes(x = time,  y = rmse),
+            color = "#750e13") 
+s_n10cr50 <- summary_s_n10 %>% 
+  ggplot() +
+  geom_line(aes(x = time,  y = cov50), 
+            color = "#0288D1") 
+s_n10cr80 <- summary_s_n10 %>%
+  ggplot() +
+  # geom_line(aes(x = time,  y = bias), color = "blue") +
+  geom_line(aes(x = time,  y = cov80),
+            color = "#0277BD") 
+s_n10cr90 <- summary_s_n10 %>%
+  ggplot() +
+  # geom_line(aes(x = time,  y = bias), color = "blue") +
+  geom_line(aes(x = time,  y = cov90), 
+            color = "#01579B")
+
+s_n10bias + theme_bw() + theme(legend.position = "none") + 
+  ylab("MAE") + xlab("Number of Matches")
+s_n10mse + theme_bw() + theme(legend.position = "none") + 
+  ylab("RMSE") + xlab("Number of Matches")
+s_n10cr50 + theme_bw() + theme(legend.position = "none") + 
+  ylab("CR50%") + xlab("Number of Matches")
+s_n10cr80 + theme_bw() + theme(legend.position = "none") + 
+  ylab("CR80%") + xlab("Number of Matches")
+s_n10cr90 + theme_bw() + theme(legend.position = "none") + 
+  ylab("CR90%") + xlab("Number of Matches")
+```
+
+Here we show the color from dark to light: matching number as 10, 15, 20, 25, 30 for anchor time 12.
+
+```{r}
+#| eval: false
+s_n20bias <- summary_s_n20 %>% 
+  ggplot() +
+  geom_line(aes(x = time,  y = bias), 
+            color = "#005d5d") 
+s_n20mse <- summary_s_n20 %>%
+  mutate(rmse = sqrt(mse)) %>%
+  ggplot() +
+  # geom_line(aes(x = time,  y = bias), color = "blue") +
+  geom_line(aes(x = time,  y = rmse),
+            color = "#750e13") 
+s_n20cr50 <- summary_s_n20 %>% 
+  ggplot() +
+  geom_line(aes(x = time,  y = cov50), 
+            color = "#0288D1") 
+s_n20cr80 <- summary_s_n20 %>%
+  ggplot() +
+  # geom_line(aes(x = time,  y = bias), color = "blue") +
+  geom_line(aes(x = time,  y = cov80),
+            color = "#0277BD") 
+s_n20cr90 <- summary_s_n20 %>%
+  ggplot() +
+  # geom_line(aes(x = time,  y = bias), color = "blue") +
+  geom_line(aes(x = time,  y = cov90), 
+            color = "#01579B")
+
+s_n20bias + theme_bw() + theme(legend.position = "none") + 
+  ylab("MAE") + xlab("Number of Matches")
+s_n20mse + theme_bw() + theme(legend.position = "none") + 
+  ylab("RMSE") + xlab("Number of Matches")
+s_n20cr50 + theme_bw() + theme(legend.position = "none") + 
+  ylab("CR50%") + xlab("Number of Matches")
+s_n20cr80 + theme_bw() + theme(legend.position = "none") + 
+  ylab("CR80%") + xlab("Number of Matches")
+s_n20cr90 + theme_bw() + theme(legend.position = "none") + 
+  ylab("CR90%") + xlab("Number of Matches")
+```
+
+```{r}
+#| eval: false
+s_n30bias <- summary_s_n30 %>% 
+  ggplot() +
+  geom_line(aes(x = time,  y = bias), 
+            color = "#005d5d") 
+s_n30mse <- summary_s_n30 %>%
+  mutate(rmse = sqrt(mse)) %>%
+  ggplot() +
+  # geom_line(aes(x = time,  y = bias), color = "blue") +
+  geom_line(aes(x = time,  y = rmse),
+            color = "#750e13") 
+s_n30cr50 <- summary_s_n30 %>% 
+  ggplot() +
+  geom_line(aes(x = time,  y = cov50), 
+            color = "#0288D1") 
+s_n30cr80 <- summary_s_n30 %>%
+  ggplot() +
+  # geom_line(aes(x = time,  y = bias), color = "blue") +
+  geom_line(aes(x = time,  y = cov80),
+            color = "#0277BD") 
+s_n30cr90 <- summary_s_n30 %>%
+  ggplot() +
+  # geom_line(aes(x = time,  y = bias), color = "blue") +
+  geom_line(aes(x = time,  y = cov90), 
+            color = "#01579B")
+
+s_n30bias + theme_bw() + theme(legend.position = "none") + 
+  ylab("MAE") + xlab("Number of Matches")
+s_n30mse + theme_bw() + theme(legend.position = "none") + 
+  ylab("RMSE") + xlab("Number of Matches")
+s_n30cr50 + theme_bw() + theme(legend.position = "none") + 
+  ylab("CR50%") + xlab("Number of Matches")
+s_n30cr80 + theme_bw() + theme(legend.position = "none") + 
+  ylab("CR80%") + xlab("Number of Matches")
+s_n30cr90 + theme_bw() + theme(legend.position = "none") + 
+  ylab("CR90%") + xlab("Number of Matches")
+```
+
+```{r}
+#| fig-width: 5
+#| fig-height: 4
+s_nbias <- ggplot() +
+  geom_line(data = summary_s_n10, 
+            aes(x = time,  y = bias), 
+            color = "#01579b") +
+    geom_line(data = summary_s_n15, 
+            aes(x = time,  y = bias), 
+            color = "#0277bd") +
+    geom_line(data = summary_s_n20, 
+            aes(x = time,  y = bias), 
+            color = "#0288d1") +
+    geom_line(data = summary_s_n25, 
+            aes(x = time,  y = bias), 
+            color = "#039be5") +
+    geom_line(data = summary_s_n30, 
+            aes(x = time,  y = bias), 
+            color = "#04c3f4") +
+  theme_bw() + # theme(legend.position = "none") + 
+  ylab("MAE") + xlab("Anchor Time")
+
+s_nrmse <- ggplot() +
+    geom_line(data = summary_s_n10 %>%
+                mutate(rmse = sqrt(mse)), 
+            aes(x = time,  y = rmse), 
+            color = "#004144") +
+    geom_line(data = summary_s_n15 %>%
+                mutate(rmse = sqrt(mse)), 
+            aes(x = time,  y = rmse), 
+            color = "#005d5d") +
+    geom_line(data = summary_s_n20 %>%
+                mutate(rmse = sqrt(mse)), 
+            aes(x = time,  y = rmse), 
+            color = "#007d79") +
+    geom_line(data = summary_s_n25 %>%
+                mutate(rmse = sqrt(mse)), 
+            aes(x = time,  y = rmse), 
+            color = "#009d9a") +
+    geom_line(data = summary_s_n30 %>%
+                mutate(rmse = sqrt(mse)), 
+            aes(x = time,  y = rmse), 
+            color = "#08bdba") +
+  theme_bw() + # theme(legend.position = "bottom") + 
+  ylab("RMSE") + xlab("Anchor Time")
+
+
+
+figure1 <- ggarrange(s_nbias + theme_bw() + 
+                       theme(legend.position = "none",
+                             axis.title.x=element_blank()),
+                    # + theme(axis.text.x=element_blank()),
+                    s_nrmse + theme_bw() + 
+                      theme(legend.position = "none"),
+                    # + theme(axis.text.x=element_blank()),
+                    ncol = 1, nrow = 2)
+
+figure1
+
+ggsave(paste0("figures/S03_single_acnchor_", Sys.Date(), ".png"))
+
+```
+
+
+```{r}
+table2 <- rbind(n10 = summary_s_n10 %>% filter(time == 11),
+      n15 = summary_s_n15 %>% filter(time == 11),
+      n20 = summary_s_n20 %>% filter(time == 11),
+      n25 = summary_s_n25 %>% filter(time == 11),
+      n30 = summary_s_n30 %>% filter(time == 11)) %>% 
+  as.data.frame() %>% 
+  select(-time) %>% 
+  mutate(rmse = sqrt(mse)) %>%
+  t() %>% 
+  as.data.frame()
+
+library(xtable)
+
+xtable(table2, type = "latex")
+```
+
+
+
+```{r}
+View(train2)
+View(test2)
+View(test_baseline)
+
+test_baseline <- test2 %>%
+  group_by(id) %>%
+  slice(1L)
+## 2.1 lmm dynamic prediction
+lmm_pred <- function(train_data,
+                     test_data,
+                     baseline) {
+  # baseline <- test_baseline
+  ctrl <- lmeControl(opt = 'optim')
+  fitting <-  lme(ht ~ bs(time, knots = c(10, 12, 15), degree = 3) * sex - 1,
+                  random = ~ 1 + bs(time, df = 4, degree = 1, intercept = FALSE)| id,
+                  control = ctrl,
+                  data = train_data)
+
+  time_vec <- unique(test_data$time)
+  lmmpred_90 <- IndvPred_lme(
+    lmeObject = fitting,
+    newdata = baseline,
+    timeVar = "time",
+    M = 500,
+    times = time_vec,
+    all_times = TRUE,
+    return_data = TRUE,
+    level = 0.9,
+    interval = "prediction",
+    seed = 555) %>%
+    dplyr::select(id, time,
+                  # observed = ht,
+                  pred,
+                  centile05 = low,
+                  centile95 = upp)
+
+
+  lmmpred_80 <- IndvPred_lme(
+    lmeObject = fitting,
+    newdata = baseline,
+    timeVar = "time",
+    M = 500,
+    times = time_vec,
+    all_times = TRUE,
+    return_data = TRUE,
+    level = 0.8,
+    interval = "prediction",
+    seed = 555) %>%
+    dplyr::select(id, time,
+                  # observed = ht,
+                  pred,
+                  centile10 = low,
+                  centile90 = upp)
+
+  lmmpred_50 <- IndvPred_lme(
+    lmeObject = fitting,
+    newdata = baseline,
+    timeVar = "time",
+    M = 500,
+    times = time_vec,
+    all_times = TRUE,
+    return_data = TRUE,
+    level = 0.5,
+    interval = "prediction",
+    seed = 555) %>%
+    dplyr::select(id, time,
+                  # observed = ht,
+                  pred,
+                  centile25 = low,
+                  centile75 = upp)
+
+  lmm <- lmmpred_50 %>%
+    left_join(lmmpred_80,
+              by = c("id", "time", "pred")) %>%
+    left_join(lmmpred_90,
+              by = c("id", "time", "pred")) %>%
+    as.data.frame() %>%
+    mutate(id = as.character(id)) %>%
+    right_join(test_data) %>%
+    dplyr::filter(time != 0)
+
+  return(lmm)
+}
+
+library(ggplot2)
+library(nlme)
+library(broom.mixed)
+library(gamlss)
+library(JMbayes)
+
+lmm_test <- lmm_pred(train2, test2, test_baseline)
+save(lmm_test, file = "results/lmm_test_result.rda")
+```
+
+
+```{r}
+load("results/lmm_test_result.rda")
+lmm_result <- lmm_test %>%
+  transmute(coverage50 = ifelse(ht >= centile25 & ht <= centile75, 1, 0),
+         coverage80 = ifelse(ht >= centile10 & ht <= centile90, 1, 0),
+         coverage90 = ifelse(ht >= centile05 & ht <= centile95, 1, 0),
+         bias = abs(ht - pred),
+         mse = (ht - pred)^2) 
+
+colMeans(lmm_result)
+sqrt(16.7513823)
+
+```
+
+
+
+
+

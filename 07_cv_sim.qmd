@@ -1,0 +1,93 @@
+---
+title: "CV simulation"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warnings = FALSE,
+                      message = FALSE,
+                      comment = "#>",
+                      #results = "hide",
+                      digits = 4,
+                      error = FALSE)
+
+## clean the R environment
+graphics.off()
+rm(list = ls())
+freshr::freshr()
+
+## load packages
+library(here, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+library(gtsummary, quietly = TRUE)
+library(flextable, quietly = TRUE)
+devtools::load_all()
+
+## check the directory for the file
+# here::dr_here()
+# here::set_here()
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+```
+
+```{r}
+#| eval: false
+meanout <- function(dataset,
+                    term = c("bias", "mse", "coverage50",
+                             "coverage80", "coverage90"),
+                    ...){
+  result <- dataset %>%
+    map("centiles_observed")
+  if (term != "mse") {
+    result <- result %>%
+      map(term) %>%
+      map(~mean(., na.rm = TRUE)) %>%
+      unlist() %>%
+      mean()
+  } else {
+    result <- result %>%
+      map(~.$bias ^2) %>%
+      map(~mean(., na.rm = TRUE)) %>%
+      unlist() %>%
+      mean()
+  }
+  return(result)
+}
+
+
+meanall <- function(dataset,
+                    ...){
+  bias <- meanout(dataset, "bias")
+  mse <- meanout(dataset, "mse")
+  cov50 <- meanout(dataset, "coverage50")
+  cov80 <- meanout(dataset, "coverage80")
+  cov90 <- meanout(dataset, "coverage90")
+  return(list(bias = bias,
+              mse = mse,
+              cov50 = cov50,
+              cov80 = cov80,
+              cov90 = cov90))
+}
+```
+
+
+
+```{r}
+load("results/simcv_1_single_time_n1:50_time11_2024-09-04.rdata")
+
+summary_seed1 <- map(plm_s_t11, ~try(meanall(.)))
+summary_seed1 <- summary_seed1 %>%
+  mutate(nmatch = 1:50)
+
+save(summary_s_n10, 
+     summary_s_n15,
+     summary_s_n20,
+     summary_s_n25, 
+     summary_s_n30,
+     summary_s_t12,
+     file = paste0("results/summary_all_tn_",
+                   Sys.Date(),
+                   ".rdata"))
+```
+

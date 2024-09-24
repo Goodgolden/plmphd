@@ -1,0 +1,14 @@
+---
+title: "people-like-me"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(plmphd)
+```

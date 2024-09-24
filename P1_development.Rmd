@@ -72,7 +72,7 @@ tsa_test <- tsa_test %>%
   mutate(baseline0 = baseline) %>%
   dplyr::select(-baseline)
 # 
-tsa_train<- tsa_train %>%
+tsa_train <- tsa_train %>%
   mutate(baseline0 = baseline) %>%
   dplyr::select(-baseline)
 

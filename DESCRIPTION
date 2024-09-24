@@ -9,6 +9,7 @@ Description: People-Like-Me functions and tests
 License: MIT + file LICENSE
 Depends: 
     brokenstick,
+    optimx,
     broom.mixed,
     dplyr,
     gamlss,
@@ -33,3 +34,8 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 LazyData: true
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr

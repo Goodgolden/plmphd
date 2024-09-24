@@ -1,0 +1,91 @@
+---
+title: "System datasets"
+---
+
+## Example dataset 
+
+Here we simulate a dataset with 510 individuals height growth over time;
+including the predictive variables: 
+
+- `ht`: Heights for the Individual
+- `id`: Individual Identifier
+- `sex`: Gender for the target individual
+- `time`: Time of measurement
+- `group`: Training or Testing group
+
+
+```{r}
+set.seed(2024)
+## simulate data -------------------------------------------------------------
+Nid <- rpois(20000, 20)
+Ntime <- map(Nid, ~rnorm(.x, 0.8, 0.3) %>%
+               abs() %>%
+               as.data.frame())
+
+data0 <- cbind(id = 1:20000,
+               group = rep(c("training", "testing"), by = 10000),
+               gap = Ntime,
+               sex = rep(c("male", "female"), each = 10000)) %>%
+  as.data.frame() %>%
+  mutate(hmax = c(rnorm(10000, 175, 10),
+                  rnorm(10000, 160, 11)),
+         hd = c(rnorm(10000, 20, 4),
+                rnorm(10000, 20, 6.5)),
+         rate = runif(20000, 5.8, 11),
+         s1 = c(abs(rnorm(10000, 0.85, 0.1)),
+                abs(rnorm(10000, 0.75, 0.1))),
+         theta = c(runif(10000, 11, 17),
+                   runif(10000, 10, 15))) %>%
+  mutate(s0 = s1 / rate,
+         h3 = hmax - 2 * hd / (exp(s0 *(3 - theta)) + exp(s1 * (3 - theta))),
+         h10 = hmax - 2 * hd/ (exp(s0 *(10 - theta)) + exp(s1 * (10 - theta))),
+         h20 = hmax - 2 * hd / (exp(s0 *(20 - theta)) + exp(s1 * (20 - theta))),
+         sex = unlist(sex),
+         group = unlist(group),
+         id = as.character(unlist(id))) %>%
+  filter(h3 > 80,
+         h3 < 106,
+         hd > 15,
+         h10 > 100) %>%
+  group_by(group, sex) %>%
+  slice_sample(n = 250L) %>%
+  ungroup()
+
+simulation <- data0 %>%
+  unnest(gap) %>%
+  dplyr::select(gap = 3, everything()) %>%
+  group_by(id) %>%
+  mutate(time = lag(cumsum(gap), default = 0) + 3) %>%
+  ungroup() %>%
+  filter(time <= 20) %>%
+  mutate(resid = rnorm(n(), 0, 1),
+         ht = hmax - 2 * hd /
+           (exp(s0 *(time - theta)) + exp(s1 * (time - theta))) + resid) %>%
+  as.data.frame() %>%
+  mutate(time1 = as.numeric(time)) %>%
+  mutate(time = round(time1, 1)) %>%
+  dplyr::select(id, sex, time, ht, group)
+
+# set.seed(2024)
+train0 <- simulation %>%
+  filter(group == "training") 
+test0 <- simulation %>%
+  ungroup() %>%
+  filter(group == "testing")
+test_id <- unique(test0$id) %>% sample(10L)
+
+test0 <- test0 %>%
+  filter(id %in% test_id)
+
+
+```
+
+
+```{r}
+library(usethis)
+
+use_data(test0, train0, 
+         internal = TRUE,
+         overwrite = TRUE)
+```
+

@@ -1,3 +1,156 @@
+#' Title Original People-Like-Me for Single-time Matching
+#'
+#' @param train_data The training dataset for brokenstick model and linear model fitting; This training dataset also serves as the pool for matching process.
+#' @param test_data The testing dataset for the personalized prediction.
+#' @param outcome_var The outcome variable of interest.
+#' @param time_var The time variable of interest.
+#' @param id_var The id variable of interest.
+#' @param tmin The minimum time point for the prediction.
+#' @param tmax The maximum time point for the prediction.
+#' @param brokenstick_knots The knots for the brokenstick model, which does not need to be equal distanced.
+#' @param anchor_time The time point for the anchor time for the matching process.
+#' @param linear_formula The formula for the linear model.
+#' @param gamlss_formula The mean formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.
+#' @param gamlss_sigma The sigma formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.
+#' @param match_number The number of matches for the matching process, which can be NULL for no number of matches, or a numeric value for the number of matches.
+#' @param match_plot The logical value for the matching plot, which can be TRUE for the plot, FALSE for no plot.
+#' @param predict_plot The logical value for the prediction plot, which can be TRUE for the plot, FALSE for no plot.
+#' @param ...
+#' @return
+#' @export
+#' @examples
+
+plm_single <- function(train_data,
+                       test_data,
+                       outcome_var,
+                       time_var,
+                       id_var,
+                       tmin,
+                       tmax,
+                       brokenstick_knots,
+                       anchor_time,
+                       linear_formula,
+                       gamlss_formula,
+                       gamlss_sigma,
+                       match_number,
+                       match_plot = TRUE,
+                       predict_plot = TRUE,
+                       ...) {
+  ## user defined variables ----------------------
+  outcome_var <- ensym(outcome_var)
+  time_var <- ensym(time_var)
+  id_var <- ensym(id_var)
+
+  # id_train <- dplyr::select(train_data, !!id_var) %>%
+  # unique() %>% unlist()
+  id_test <- dplyr::select(test_data, !!id_var) %>%
+    unique() %>%
+    unlist()
+
+  ## extract the test baseline information
+  test_baseline <- test_data %>%
+    group_by(!!id_var) %>%
+    arrange({{time_var}}) %>%
+    slice(1L) %>%
+    ## change the baseline outcome_vars as new variable
+    # dplyr::select(baseline = !!outcome_var, everything()) %>%
+    ## move the original time_var as all ZEROs
+    dplyr::select(-!!time_var)
+
+  ## brokenstick model  ------------------------------
+  ## will add other methods probably will add ifelse
+  ## currently just the brokenstick model
+  brokenstick <- impute_brokenstick(outcome_var = !!outcome_var,
+                                    time_var = !!time_var,
+                                    id_var = !!id_var,
+                                    bs_knots = brokenstick_knots,
+                                    anchor_time = anchor_time,
+                                    data = train_data)
+
+  ## linear model section ---------------------
+  if (is.null(linear_formula)) {
+    stop("Please specify the type of linear model")}
+  ### single linear model with time as independent factor ----------------------
+
+  lm_bks <- lm(as.formula(linear_formula),
+               data = brokenstick)
+  # test_baseline[paste0("anchor_", anchor_time)] <- NA
+
+  data_test1 <- test_baseline %>%
+    # dplyr::select(-!!time_var) %>%
+    ## this is the unnest way of doing testing dataset
+    mutate(time = list(anchor_time)) %>%
+    unnest(cols = time) %>%
+    rename(baseline = !!outcome_var)
+
+  lp_test <- data_test1 %>%
+    ungroup() %>%
+    mutate(lm_bks_target = predict(lm_bks, newdata = .)) %>%
+    dplyr::select(!!id_var, !!time_var, contains("lm_bks_target")) %>%
+    as.matrix() %>%
+    as.data.frame() %>%
+    rename(!!outcome_var := lm_bks_target)
+
+  lp_train <- brokenstick %>%
+    ungroup() %>%
+    mutate(lm_bks_target = predict(lm_bks)) %>%
+    dplyr::select(!!id_var, !!time_var, contains("lm_bks_target")) %>%
+    as.matrix() %>%
+    as.data.frame() %>%
+    rename(!!outcome_var := lm_bks_target)
+
+  ## need to be changed if the other methods need to be used
+  cat("\n Finding Matches with Single Time Prediction\n")
+
+  ## distance and matches finding ----------------------------------
+  ## based on single time point is easier
+  subset <- lp_test %>%
+    group_by(!!id_var) %>%
+    group_map(~ dis_match(lb_train = lp_train,
+                          lb_test_ind = .,
+                          train = train_data,
+                          match_methods = "single",
+                          id_var = !!id_var,
+                          outcome_var = !!outcome_var,
+                          time_var = !!time_var,
+                          match_number = match_number,
+                          match_time = anchor_time,
+                          match_plot = match_plot)%>%
+                suppressMessages(),
+              .progress = TRUE)
+
+  cat("\n Final Prediction is almost done! \n")
+  ## final gamlss is ready ---------------------------
+  results <- test_data %>%
+    group_by(!!id_var) %>%
+    group_map(~ as.data.frame(.)) %>%
+    map2(subset,
+         ~try(predict_gamlss(matching = .y$subset,
+                             test_one = .x,
+                             id_var = !!id_var,
+                             time_var = !!time_var,
+                             outcome_var = !!outcome_var,
+                             tmin = tmin,
+                             tmax = tmax,
+                             # weight = weight,
+                             gamlss_formula = gamlss_formula,
+                             gamsigma_formula = gamlss_sigma,
+                             predict_plot = predict_plot) %>%
+                suppressMessages()),
+         .progress = TRUE)
+
+  ## attributes ready ---------------------------------
+  attr(results, "subset") <- subset
+  attr(results, "linear") <- lm_bks
+  # attr(results, "matching_plot") <- subset$matching_plot
+  attr(results, "brokenstick_model") <- brokenstick
+  # attr(results, "brokenstick_impute") <- brokenstick$data_anchor
+  # attr(results, "baseline") <- brokenstick$data_baseline
+  # attr(results, "linear_model") <- summary(lm_bks)
+
+  return(results)
+}
+
 
 
 #' Title People-Like-Me methods for single testing individual
@@ -49,8 +202,6 @@ people_like_me <- function(train_data,
   time_var <- ensym(time_var)
   id_var <- ensym(id_var)
 
-  
-  # browser()
   ## extract the test baseline information
   test_baseline <- test_data %>%
     group_by(!!id_var) %>%
@@ -172,7 +323,7 @@ people_like_me <- function(train_data,
 #' @param match_number The number of matches for the matching process, which can be NULL for no number of matches, or a numeric value for the number of matches.
 #' @param match_plot The logical value for the matching plot, which can be TRUE for the plot, FALSE for no plot.
 #' @param predict_plot The logical value for the prediction plot, which can be TRUE for the plot, FALSE for no plot.
-#' @param ... 
+#' @param ...
 
 people_like_us <- function(train_data,
                            test_data,
@@ -198,14 +349,14 @@ people_like_us <- function(train_data,
   outcome_var <- ensym(outcome_var)
   time_var <- ensym(time_var)
   id_var <- ensym(id_var)
-  
 
-  # id_train <- dplyr::select(train_data, !!id_var) %>% 
+
+  # id_train <- dplyr::select(train_data, !!id_var) %>%
   # unique() %>% unlist()
   id_test <- dplyr::select(test_data, !!id_var) %>%
     unique() %>%
     unlist()
-  
+
   ## extract the test baseline information
   test_baseline <- test_data %>%
     group_by(!!id_var) %>%
@@ -215,7 +366,7 @@ people_like_us <- function(train_data,
     # dplyr::select(baseline = !!outcome_var, everything()) %>%
     ## move the original time_var as all ZEROs
     dplyr::select(-!!time_var)
-  
+
   ## brokenstick model  ------------------------------
   ## will add other methods probably will add ifelse
   ## currently just the brokenstick model
@@ -225,7 +376,7 @@ people_like_us <- function(train_data,
                                     bs_knots = brokenstick_knots,
                                     anchor_time = anchor_time,
                                     data = train_data)
-  
+
   ## linear model section ---------------------
   if (is.null(linear_model)) {
     stop("Please specify the type of linear model")}
@@ -234,14 +385,14 @@ people_like_us <- function(train_data,
     lm_bks <- lm(as.formula(linear_formula),
                  data = brokenstick)
     # test_baseline[paste0("anchor_", anchor_time)] <- NA
-    
+
     data_test1 <- test_baseline %>%
       # dplyr::select(-!!time_var) %>%
       ## this is the unnest way of doing testing dataset
       mutate(time = list(anchor_time)) %>%
       unnest(cols = time) %>%
       rename(baseline = !!outcome_var)
-    
+
     lp_test <- data_test1 %>%
       ungroup() %>%
       mutate(lm_bks_target = predict(lm_bks, newdata = .)) %>%
@@ -249,7 +400,7 @@ people_like_us <- function(train_data,
       as.matrix() %>%
       as.data.frame() %>%
       rename(!!outcome_var := lm_bks_target)
-    
+
     lp_train <- brokenstick %>%
       ungroup() %>%
       mutate(lm_bks_target = predict(lm_bks)) %>%
@@ -257,7 +408,7 @@ people_like_us <- function(train_data,
       as.matrix() %>%
       as.data.frame() %>%
       rename(!!outcome_var := lm_bks_target)}
-  
+
   ### multiple linear model ---------------------------------------
   if (linear_model == "mlm") {
     data_test1 <- test_baseline %>%
@@ -272,13 +423,13 @@ people_like_us <- function(train_data,
       #              names_prefix = "anchor_",
       #              values_to = "lm_bks_target") %>%
       rename(baseline = !!outcome_var)
-    
+
     lm_bks <- brokenstick %>%
       group_by(!!time_var) %>%
       group_split() %>%
       map(~lm(as.formula(linear_formula), .x))
-    
-    lp_test <- map_dfr(lm_bks, 
+
+    lp_test <- map_dfr(lm_bks,
                     ~ data_test1 %>%
                          ungroup() %>%
                          mutate(lm_bks_target = predict(.x, newdata = .)) %>%
@@ -298,17 +449,17 @@ people_like_us <- function(train_data,
     }
 
   ## end of 01_impute.R file ------------------------
-  
+
   if (match_methods == "euclidean") {
     cat("\n Finding Matches with Euclidean distance\n")}
-  
+
   if (match_methods == "mahalanobis") {
     cat("\n Finding Matches with Mahalanobis distance\n")}
-  
+
   if (match_methods == "single") {
     cat("\n Finding Matches with Single Time Prediction\n")}
-  
-  ## distance and matches finding ---------------------------------- 
+
+  ## distance and matches finding ----------------------------------
   subset <- lp_test %>%
     group_by(!!id_var) %>%
     group_map(~ dis_match(lb_train = lp_train,
@@ -323,12 +474,13 @@ people_like_us <- function(train_data,
                           match_time = match_time,
                           match_plot = match_plot),
               .progress = TRUE)
-  
+
+  cat("\n Final Prediction is almost done! \n")
   ## final gamlss is ready ---------------------------
   results <- test_data %>%
     group_by(!!id_var) %>%
-    group_map(~ as.data.frame(.)) %>% 
-    map2(subset, 
+    group_map(~ as.data.frame(.)) %>%
+    map2(subset,
          ~try(predict_gamlss(matching = .y$subset,
                              test_one = .x,
                              id_var = !!id_var,
@@ -339,10 +491,10 @@ people_like_us <- function(train_data,
                              weight = weight,
                              gamlss_formula = gamlss_formula,
                              gamsigma_formula = gamlss_sigma,
-                             predict_plot = predict_plot) %>% 
+                             predict_plot = predict_plot) %>%
                 suppressMessages()),
          .progress = TRUE)
-  
+
   ## attributes ready ---------------------------------
   attr(results, "subset") <- subset
   attr(results, "linear") <- lm_bks

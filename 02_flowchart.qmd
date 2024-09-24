@@ -1,0 +1,99 @@
+---
+title: "Flowchart"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+## clean the R environment
+rm(list = ls())
+freshr::freshr()
+
+## load packages
+library(here)
+library(tidyverse)
+library(rsvg)
+library(xml2)
+
+library(DiagrammeR)
+library(DiagrammeRsvg)
+
+## check the directory for the file
+# here::dr_here()
+# here::set_here()
+```
+
+## Goal for this chapter
+
+- [x] flowchart
+- [x] You are epic!
+
+## flowchart for algorithm
+
+```{r "flowchart_plm"}
+flowchart2 <- DiagrammeR::grViz(
+"digraph graph2 {
+
+graph [layout = dot]
+
+# node definitions with substituted label text
+node [shape = rectangle, width = 4, fillcolor = Biege]
+a [label = 
+  <
+    <b> </b> <br ALIGN = 'CENTER'/> 
+    <b>Training process with two step model: </b> <br ALIGN = 'CENTER'/> 
+    &nbsp; &#8226; 1. Brokenstick model prediction with only time as covariate internal knots at c(3, 6, 9, 12) <br ALIGN = 'LEFT'/>
+    &nbsp; &#8226; 2. Linear model prediction with the demographics and baseline outcome <br ALIGN = 'LEFT'/>
+    >
+  ]
+  
+b [label = 
+  <
+    <b> </b> <br ALIGN = 'CENTER'/> 
+    <b>Estimation: </b> <br ALIGN = 'CENTER'/> 
+    &nbsp; &#8226; Predict based on Linear model <br ALIGN = 'LEFT'/>
+     &nbsp; &nbsp; &nbsp; demographics and baseline outcome to predict for a new target individual model <br ALIGN = 'LEFT'/>
+    >
+  ]
+  
+c [label =
+ <
+   <b> </b> <br ALIGN = 'CENTER'/> 
+   <b>Matching: </b> <br ALIGN = 'CENTER'/> 
+   &nbsp; &#8226; Single-time matching based on cross validation anchor at 11 and matching number 25/30 <br ALIGN = 'LEFT'/>
+  >
+ ]
+ 
+ 
+d [label =
+ <
+   <b> </b> <br ALIGN = 'CENTER'/> 
+   <b>Predicting: </b> <br ALIGN = 'CENTER'/> 
+   &nbsp; &#8226; Median for predictive trajectory <br ALIGN = 'LEFT'/>
+    &nbsp; &#8226; Centiles for predictive intervals <br ALIGN = 'LEFT'/>
+  >
+ ]
+
+# These are the main nodes at top of graph
+
+  a -> b -> c -> d
+}
+")
+
+
+## see the flowchart
+flowchart2
+# flowchart1 %>%
+#   export_svg() %>%
+#   read_xml() %>%
+#   write_xml(paste0("~/Desktop/project/plmlmm/paper/figure/00_plmlmm_data_cleaning", Sys.Date(), ".svg"))
+
+## save the flowchart
+flowchart2 %>%
+  export_svg() %>% 
+  charToRaw() %>% 
+  rsvg_png(paste0("figures/02_plmlmm_step_algorithm_", Sys.Date(), ".png"))
+# export_graph(flowchart,
+# file_name = "final/flowchart_graph.png",
+# file_type = "png")
+```

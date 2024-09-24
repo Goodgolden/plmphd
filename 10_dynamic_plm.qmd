@@ -1,0 +1,526 @@
+---
+title: "Dynamic PLM (Height)"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warnings = FALSE,
+                      message = FALSE,
+                      comment = "#>",
+                      #results = "hide",
+                      digits = 4,
+                      error = FALSE)
+
+## clean the R environment
+# graphics.off()
+# rm(list = ls())
+# freshr::freshr()
+
+## load packages
+library(here, quietly = TRUE)
+library(lme4, quietly = TRUE)
+library(devtools, quietly = TRUE)
+library(optimx, quietly = TRUE)
+
+devtools::load_all()
+## check the directory for the file
+# here::dr_here()
+# here::set_here()
+
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+```
+
+```{css, echo=FALSE}
+.scroll-100 {
+  max-height: 300px;
+  max-width: 1000px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+## Goal for this chapter
+
+-   [x] to check the brokenstick model impute `bks_plots`
+
+-   [x] to confirm the linear model is the problem `lm_plots`
+
+-   [x] to merge the brokenstick and linear into one step
+
+    -   [x] using dynamic prediction MC `JMbayes::IndvPred_lme()`
+
+    -   [x] writing a new function `plm2024::IndvPred_lmer()`, and it works!!!
+
+    -   [x] comparing it with the `bks_plots` and `lm_plots`
+
+    -   [x] gamlss model for all model
+
+## Dynamic prediction with PLM stepwise
+
+```{r}
+load("~/Desktop/plmphd/R/train_test.rda")
+train1 <- train %>%
+  group_by(id) %>%
+  summarise(ht0 = min(ht),
+            age0 = min(age))
+
+train2 <- full_join(train, train1, by = "id") %>%
+  mutate(sid = "S") %>%
+  unite(id, sid, id, sep = "") 
+
+test1 <- test %>%
+  group_by(id) %>%
+  summarise(ht0 = min(ht),
+            age0 = min(age))
+
+test2 <- full_join(test, test1, by = "id") %>%
+  mutate(sid = "S") %>%
+  unite(id, sid, id, sep = "") 
+```
+
+
+```{r}
+#| eval: false
+gf <- "ht ~ cs(time, df = 3)"
+gs <- "~ cs(time, df = 1)"
+
+plt_5.0 <- people_like_thee(train_data = train2,
+                       test_data = test2,
+                       new_data = test2 %>%
+                         group_by(!!id_var) %>%
+                         filter(time <= 5),
+                       outcome_var = "ht",
+                       time_var = "time",
+                       id_var = "id",
+                       tmin = 5,
+                       tmax = 15,
+                       brokenstick_knots,
+                       anchor_time = "c(5, 10, 15)",
+                       gamlss_formula = gf,
+                       gamlss_sigma = gs,
+                       match_methods = "euclidean",
+                       weight = FALSE,
+                       match_alpha = NULL,
+                       match_number = 30,
+                       match_plot = FALSE,
+                       predict_plot = FALSE)
+
+plt_5.5 <- people_like_thee(train_data = train2,
+                       test_data = test2,
+                       new_data = test2 %>%
+                         group_by(!!id_var) %>%
+                         filter(time <= 5.5),
+                       outcome_var = "ht",
+                       time_var = "time",
+                       id_var = "id",
+                       tmin = 5,
+                       tmax = 15,
+                       brokenstick_knots,
+                       anchor_time = "c(5, 10, 15)",
+                       gamlss_formula = gf,
+                       gamlss_sigma = gs,
+                       match_methods = "euclidean",
+                       weight = FALSE,
+                       match_alpha = NULL,
+                       match_number = 20,
+                       match_plot = FALSE,
+                       predict_plot = FALSE)
+
+plt_6.0 <- people_like_thee(train_data = train2,
+                       test_data = test2,
+                       new_data = test2 %>%
+                         group_by(!!id_var) %>%
+                         filter(time <= 6.0),
+                       outcome_var = "ht",
+                       time_var = "time",
+                       id_var = "id",
+                       tmin = 5,
+                       tmax = 15,
+                       brokenstick_knots,
+                       anchor_time = "c(5, 10, 15)",
+                       gamlss_formula = gf,
+                       gamlss_sigma = gs,
+                       match_methods = "euclidean",
+                       weight = FALSE,
+                       match_alpha = NULL,
+                       match_number = 20,
+                       match_plot = FALSE,
+                       predict_plot = FALSE)
+
+plt_6.5 <- people_like_thee(train_data = train2,
+                       test_data = test2,
+                       new_data = test2 %>%
+                         group_by(!!id_var) %>%
+                         filter(time <= 6.5),
+                       outcome_var = "ht",
+                       time_var = "time",
+                       id_var = "id",
+                       tmin = 5,
+                       tmax = 15,
+                       brokenstick_knots,
+                       anchor_time = "c(5, 10, 15)",
+                       gamlss_formula = gf,
+                       gamlss_sigma = gs,
+                       match_methods = "euclidean",
+                       weight = FALSE,
+                       match_alpha = NULL,
+                       match_number = 20,
+                       match_plot = FALSE,
+                       predict_plot = FALSE)
+
+save(plt_5.0, plt_5.5, plt_6.0, plt_6.5,
+     file = "results/S10_people_like_thy_results_data.Rdata")
+```
+
+## Results for dynamic prediction
+
+```{r}
+meanout <- function(dataset){
+  result0 <- dataset %>%
+    as.data.frame() %>%
+    mutate(mse = bias^2)
+  result1 <- result0 %>%
+    colMeans() %>%
+    unlist()
+  return(result1)
+}
+
+summary_5.0 <- map(plt_5.0,  "centiles_observed") %>%
+  map_dfr(~try(meanout(.))) %>%
+  colMeans()
+summary_5.5 <- map(plt_5.5,  "centiles_observed") %>%
+  map_dfr(~try(meanout(.))) %>%
+  colMeans()
+summary_6.0 <- map(plt_6.0,  "centiles_observed") %>%
+  map_dfr(~try(meanout(.))) %>%
+  colMeans()
+summary_6.5 <- map(plt_6.5,  "centiles_observed") %>%
+  map_dfr(~try(meanout(.))) %>%
+  colMeans()
+
+rbind(summary_5.0, summary_5.5, 
+      summary_6.0, summary_6.5)
+```
+
+
+## Step1 Brokenstick
+
+```{r}
+bsk_knots <- c(5, 10, 15)
+anchor <- c(2, 3, 4, 5, 6, 7, 8, 9, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14, 14.5, 15, 15.5, 16)
+
+mlmf <- "ht ~ sex + sex:ht0 + 
+              bmi + bmi:ht0 + 
+              age + age:ht0 + 
+              genotype + genotype:ht0 + 
+              ethnic + ethnic:ht0 + ht0"
+
+
+
+# lmf <- "ht ~ as.factor(time) + 
+#               sex + sex:ht0 + sex:t0 + 
+#               bmi + bmi:ht0 + bmi:t0 +
+#               age + age:ht0 + age:t0 +
+#               genotype + genotype:ht0 + genotype:t0 +
+#               ethnic + ethnic:ht0 + ethnic:t0 +
+#               ht0 + t0"
+```
+
+### `nlme::lme()` takes too long time
+
+Stef is right, the `nlme::lme()` takes way too long time. Also having the convergence problem with more than six internal knots.
+
+Need to rewrite the `IndvPred_lme()` into the `IndvPred_lmer()`. Probably change the name to as `plm2024::dyn_impute`
+
+```         
+Quitting from lines 99-123 [unnamed-chunk-2] (25_check.qmd)
+Error in `lme.formula()`:
+! optim problem, convergence error code = 1
+  message = 
+Backtrace:
+ 1. nlme::lme(...)
+ 2. nlme::lme.formula(...)
+```
+
+### Writing my own function for `IndvPred_lmer()`
+
+Benchmark results for this run with and without derivatives show an approximately 20% speedup. This is a case with only 2 top-level parameters, but the fit took only 31 deviance function evaluations (see `m0@optinfo$feval`) to converge, so the effect of the additional $7 (n2−n+1)$ function evaluations is noticeable.
+
+```{r}
+ctl <- .makeCC("warning", tol = 1e-3)
+bks_lmer <- lmer(ht ~ 1 + bs(time, knots = c(5, 13, 15), degree = 1) * sex + 
+                   (1 + bs(time, knots = c(8, 12, 16), degree = 1) | id),
+                 # na.action = na.exclude,
+                 control = lmerControl(check.nobs.vs.nRE = "warning",
+                                         optCtrl = list(method = 'nlminb'),
+                                         optimizer = "optimx"),
+                 data = train2)
+
+# bks <- brokenstick::brokenstick(ht ~ time | id, 
+#                    data = train2, 
+#                    method = "lmer",
+#                    knots = c(4, 8, 12), 
+#                    seed = 123)
+summary(bks_lmer)
+summary(rePCA(bks_lmer))
+# 
+# bks_imput <- impute_brokenstick(outcome_var = "ht",
+#                                 time_var = "time",
+#                                 id_var = "id",
+#                                 bs_knots = bsk_knots,
+#                                 anchor_time = anchor,
+#                                 data = train2)
+# View(bks_imput)
+```
+
+You can check with the rePCA function from lme4 with the following code: summary(rePCA(model2)). The result will provide a table that provides the proportion of variance explained in your random effect structure. If you have any column that explains near 0 proportion of variance, this is likely the issue and is causing the singular fit error. Another way to confirm this, is to plot out the mean RT for each condition by participant to create what's called a "spaghetti plot". Add lines and group them by the participant so that you can see the changes in RTs for each condition by the participant. If the lines are all parallel (or nearly parallel), then this would indicate that there is likely no randomness in your effect of condition.
+
+## Step2 Imputation
+
+The dynamic prediction will automatically add the initial values to cause trouble remember to remove all of them.
+
+```{r}
+#| eval: false
+#| 
+test_baseline <- test2 %>%
+  group_by(id) %>%
+  # group_split()
+  mutate(group_index = row_number()) %>% 
+  filter(time <= 4.5)
+
+## map the function to all individuals
+# fixed <- "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex"
+# random <- "1 + bs(time, knots = c(5, 10, 15), degree = 1)"
+lp_test <- IndvPred_lmer(lmerObject = bks_lmer,
+                          data = train2,
+                          newdata = test_baseline,
+                          timeVar = "time",
+                          outcomeVar = "ht",
+                          idVar = "id",
+                          lmer.fixed = "1 + bs(time, knots = c(5, 13, 15), degree = 1) * sex",
+                          lmer.random = "1 + bs(time, knots = c(4, 8, 12, 16), degree = 1)",
+                          M = 200,
+                          times = anchor,
+                          all_times = TRUE,
+                          return_data = FALSE,
+                          level = 0.9,
+                          interval = "prediction",
+                          seed = 555)
+## drizopoulos code for building the data.predict
+# extract_lmeComponents(bks_nlme, timeVar = "time")
+# View(extract_lmeComponents)
+
+```
+
+```{r}
+#| eval: false
+#| fig-width: 50
+#| fig-height: 60
+
+lp_test <- lp_test %>%
+  as.data.frame() %>%
+  mutate(ht = as.numeric(predicted_y),
+         ht = round(ht, 2))
+plot2 <- ggplot() +
+  # geom_line(data = data1,
+  #           aes(x = as.numeric(time), 
+  #               y = ht, 
+  #               group = id),
+  #           color = "indianred") +
+  # geom_point(data = data1,
+  #            aes(x = as.numeric(time), 
+  #               y = ht, 
+  #               group = id)) +
+  geom_line(data = lp_test,
+            aes(x = as.numeric(time), 
+                y = ht, 
+                group = id),
+            color = "darkgreen",
+            alpha = 0.3) +
+  geom_point(data = lp_test,
+             aes(x = as.numeric(time), 
+                y = ht, 
+                group = id)) +
+  geom_line(data = test2,
+            aes(x = time,
+                y = ht,
+                group = id),
+            color = "grey") +
+  facet_wrap(~id, ncol = 30) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(title = "Individual Trajectories",
+       x = "Time",
+       y = "Outcome Score")
+
+plot2
+ggsave("figures/P01_dynamic_predict_trajectories.png",
+       plot2, 
+       width = 45,
+       height = 45,
+       units = "in",
+       dpi = 300)
+
+```
+
+```{r}
+knitr::include_graphics("figure/P10_dynamic_predict_trajectories.png")
+```
+
+Here is the comparison for brokenstick prediction and dynamic prediction. We hope that the dynamic prediction is much better than the brokenstick.
+
+need to systematically analysis this:
+
+-   generate data with the anchor times in the training data
+
+-   see how the error accumulate over each step
+
+-   **through dynamic prediction is no so good**
+
+```{r}
+#| eval: false
+#| fig-wideth: 50
+#| fig-height: 60
+plot2.5 <- ggplot() +
+  geom_line(data = bks_imput,
+            aes(x = as.numeric(as.character(time)),
+                y = ht,
+                group = id),
+            color = "indianred") +
+  geom_point(data = bks_imput,
+             aes(x = as.numeric(as.character(time)),
+                y = ht,
+                group = id)) +
+  geom_line(data = train2,
+            aes(x = time, 
+                y = ht, 
+                group = id),
+            color = "grey") +
+  geom_line(data = data1_ci50,
+            aes(x = as.numeric(as.character(time)),
+                y = pred,
+                group = id),
+            color = "darkgreen") +
+  geom_point(data = data1_ci50,
+             aes(x = as.numeric(as.character(time)),
+                y = pred,
+                group = id)) +
+  facet_wrap(~id, ncol = 30) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(title = "Individual Trajectories",
+       x = "Time",
+       y = "Outcome Score")
+
+plot2.5
+ggsave("figure/P01_brokenstick_dynamic_comparison.png", 
+       plot2.5, 
+       width = 45,  
+       height = 45, 
+       units = "in", 
+       dpi = 300) 
+```
+
+```{r}
+knitr::include_graphics("figure/P01_brokenstick_dynamic_comparison.png")
+```
+
+## Step3 Matching
+
+```{r}
+#| eval: false
+
+data2 <- data2_test %>%
+  ungroup() %>%
+  dplyr::select(id, time, ht = pred)
+
+data1 <- data1_ci50 %>%
+  ungroup() %>% 
+  dplyr::select(id, time, ht = pred)
+
+View(data1)
+View(data2)
+
+subset <- data2 %>%
+    group_by(id) %>%
+    group_map(~ dis_match(lb_train = data1,
+                          lb_test_ind = .,
+                          train = train2,
+                          match_methods = "euclidean",
+                          id_var = id,
+                          outcome_var = ht,
+                          time_var = time,
+                          match_number = 10,
+                          match_time = FALSE,
+                          match_plot = TRUE),
+              .progress = TRUE)
+
+View(subset)
+```
+
+```{r}
+#| eval: false
+
+plots <- map(subset, "plot")
+plots
+library(gridExtra)
+
+ggsave("figure/P01_matching_plot.png", 
+       marrangeGrob(grobs = plots,
+                    ncol = 20, nrow = 23),
+       width = 30,  
+       height = 31, 
+       units = "in", 
+       dpi = 300)
+```
+
+```{r}
+knitr::include_graphics("figure/P01_matching_plot.png")
+```
+
+## Step4 Final prediction
+
+```{r}
+#| eval: false
+View(test2)
+results <- test2 %>%
+  group_by(id) %>%
+  group_map(~ as.data.frame(.)) %>% 
+  map2(subset, 
+       ~try(predict_gamlss(matching = .y$subset,
+                           test_one = .x,
+                           id_var = id,
+                           time_var = time,
+                           outcome_var = ht,
+                           tmin = 0,
+                           tmax = 16,
+                           gamlss_formula = gf,
+                           gamsigma_formula = gs,
+                           predict_plot = TRUE) %>% 
+              suppressMessages()),
+       .progress = TRUE)
+View(subset)
+# subset %>% length() # 457
+save(results, subset,
+     file = "figure/P01_gamlss_subset_results_data.Rdata")
+```
+
+```{r}
+#| eval: false
+plots <- map(results, "predictive_centiles")
+
+library(gridExtra)
+
+ggsave("figure/P01_final_predictive_plot.png", 
+       marrangeGrob(grobs = plots, ncol = 20, nrow = 25),
+       width = 50, 
+       height = 45, 
+       units = "in", 
+       dpi = 300)
+```
+
+```{r}
+knitr::include_graphics("figure/P01_final_predictive_plot.png")
+```

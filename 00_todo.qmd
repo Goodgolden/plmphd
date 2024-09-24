@@ -1,0 +1,66 @@
+# Working log {.unnumbered}
+
+Here is the contents for Randy's thesis
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warnings = FALSE,
+                      message = FALSE,
+                      comment = "",
+                      #results = "hide",
+                      digits = 4,
+                      error = FALSE)
+
+## clean the R environment
+# graphics.off()
+# rm(list = ls())
+# freshr::freshr()
+
+## load packages
+library(here, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+library(gtsummary, quietly = TRUE)
+library(flextable, quietly = TRUE)
+
+## check the directory for the file
+# here::dr_here()
+here::set_here()
+
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+```
+
+```{r}
+praise::praise()
+```
+
+## August 2024
+
+### 2024-08-01 `r praise::praise()`
+
+-   [x] committee meeting date before the evaluation date August 28th
+
+-   [x] the proposal for the PhD thesis
+
+-   [x] add the nonlinear simulation to the methods
+
+-   [x] the paper plan see the Excel file
+
+-   [x] the defense date
+
+### Tables and Figures for the paper
+
+- [x] Table1 for the EPIC data
+
+- [x] the overall plots with a few simulations plots
+
+- [x] flowchart for the algorithm
+
+- [x] cross-validation for the time and matching number
+
+- [x] the simulation results
+
+- [x] against specification
+
+

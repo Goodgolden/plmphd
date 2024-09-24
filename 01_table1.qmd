@@ -1,0 +1,325 @@
+---
+title: "Table1"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warnings = FALSE,
+                      message = FALSE,
+                      comment = "#>",
+                      #results = "hide",
+                      digits = 4,
+                      error = FALSE)
+
+## clean the R environment
+graphics.off()
+rm(list = ls())
+freshr::freshr()
+
+## load packages
+library(here, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+library(gtsummary, quietly = TRUE)
+library(flextable, quietly = TRUE)
+
+## check the directory for the file
+# here::dr_here()
+here::set_here()
+
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+```
+
+## Goal for this chapter
+- [x] table1
+- [x] You are funkadelic!
+
+```{r "dataset", eval = FALSE}
+## set seed
+set.seed(555)
+# load("data/sysdata.rda")
+
+# the code to prepare for
+# epic, demog, test and train
+# data0, data1, and data2
+# they are all saved in sysdata.rda files
+data <- left_join(epic, demog, by = "id") %>%
+  mutate(sex = as.factor(sex))
+test_id <- unique(test$id) %>% unlist()
+train_id <- unique(train$id) %>% unlist()
+
+data0 <- data %>%
+  mutate(group = case_when(id %in% test_id ~ "testing",
+                           TRUE ~ "training"))
+data1 <- data0 %>%
+  group_by(id, group) %>%
+  summarize(age_mean = mean(age),
+            age_min = min(age),
+            age_max = max(age),
+            age_n = length(age),
+            visitn = n(),
+            h_mean = mean(ht),
+            h_max = max(ht),
+            h_min = min(ht),
+            w_mean = mean(wt),
+            w_max = max(wt),
+            w_min = min(wt),
+            sex = sex,
+            genotype = genotype,
+            ethnic = ethnic,
+            race = race) %>%
+  ungroup() %>%
+  unique()
+
+# working dataset
+data2 <- full_join(data1, data,
+                   by = join_by(id, sex, genotype, ethnic, race)) %>%
+  as.data.frame() %>%
+  mutate(time = age - age_min,
+         age_diff = age_max - age_min)
+
+write.csv(data1, file = paste0("data/S01_table1_dataset_randy_", Sys.Date(), ".csv"))
+write.csv(data2, file = paste0("data/S01_epic_clean_randy_", Sys.Date(), ".csv"))
+```
+
+## Making table1
+
+```{r "table1", message = FALSE, warning = FALSE}
+load("R/train_test.rda")
+train0 <- train %>%
+  group_by(id) %>%
+  summarize(group = unique(group),
+            sex = unique(sex),
+            genotype = unique(genotype),
+            ethnic = unique(ethnic),
+            visitn = n(),
+            ht_min = min(ht),
+            age_min = min(age),
+            age_max = max(age),
+            age_diff = age_max - age_min)
+
+test0 <- test %>% 
+  group_by(id) %>%
+  summarize(group = unique(group),
+            sex = unique(sex),
+            genotype = unique(genotype),
+            ethnic = unique(ethnic),
+            visitn = n(),
+            ht_min = min(ht),
+            age_min = min(age),
+            age_max = max(age),
+            age_diff = age_max - age_min)
+
+data1 <- rbind(train0, test0)
+
+
+## table0 contains all the information about demgo for total
+table0 <- data1 %>%
+  unique() %>%
+  dplyr::select(-id) %>%
+  mutate(ethnic = case_when(ethnic == 1 ~ "Hispanic",
+                            ethnic == 2 ~ "Non-Hispanic"),
+         # race = case_when(race == 1 ~ "White",
+         #                  race != 1 ~ "Other"),
+         sex = case_when(sex == "F" ~ "Female",
+                         sex == "M" ~ "Male"),
+         age_diff = age_max - age_min) %>%
+  dplyr::select(group,
+                Genotype = genotype,
+                Gender = sex,
+                # Race = race,
+                Ethnicity = ethnic,
+                "Visit number" = visitn,
+                "Age baseline" = age_min, 
+                "Age final" = age_max, 
+                "Follow up years" = age_diff,
+                # "Height mean" = h_mean, 
+                "Height baseline" = ht_min) %>% 
+  # "Weight mean" = w_mean,
+  # "Weight baseline" = w_min
+  ## select all the variables for table1
+  tbl_summary(by = group) %>%
+  ## just display all the variables in one column
+  modify_header(label = "**Characteristics**") %>%
+  # update the column header
+  bold_labels() %>%
+  italicize_labels() %>%
+  # as.data.frame()
+  as_flex_table() %>%
+  flextable::bold(part = "header") %>%
+  ## auto adjust the column widths
+  flextable::autofit()
+
+## table1 contains information of dataset grouped as training and testing
+# table1 <- data1 %>%
+#   unique() %>%
+#   dplyr::select(-id) %>%
+#   mutate(ethnic = case_when(ethnic == 1 ~ "Hispanic",
+#                             ethnic == 2 ~ "Non-Hispanic"),
+#          # race = case_when(race == 1 ~ "White",
+#          #                  race != 1 ~ "Other"),
+#          sex = case_when(sex == "F" ~ "Female",
+#                          sex == "M" ~ "Male"),
+#          age_diff = age_max - age_min) %>% 
+#   dplyr::select(group,
+#                 Genotype = genotype,
+#                 Gender = sex,
+#                 Ethnicity = ethnic,
+#                 "Visit number" = visitn,
+#                 # "Age mean" = age_mean, 
+#                 "Age baseline" = age_min, 
+#                 "Age final" = age_max, 
+#                 "Follow up years" = age_diff,
+#                 # "Height mean" = h_mean, 
+#                 "Height baseline" = h_min) %>% 
+#   # "Weight mean" = w_mean,
+#   # "Weight baseline" = w_min)
+#   ## select all the variables for table1
+#   tbl_summary(by = group) %>%
+#   ## just display all the variables in one column
+#   modify_header(label = "**Characteristics**") %>%
+#   # update the column header
+#   bold_labels() %>%
+#   add_p() %>%
+#   italicize_labels()
+
+
+## table1 contains information of dataset grouped as training and testing
+table2 <- data1 %>%
+  unique() %>%
+  dplyr::select(-id) %>%
+  mutate(ethnic = case_when(ethnic == 1 ~ "Hispanic",
+                            ethnic == 2 ~ "Non-Hispanic"),
+         # race = case_when(race == 1 ~ "White",
+         #                  race != 1 ~ "Other"),
+         sex = case_when(sex == "F" ~ "Female",
+                         sex == "M" ~ "Male"),
+         age_diff = age_max - age_min) %>% 
+  dplyr::select(group,
+                Genotype = genotype,
+                Gender = sex,
+                # Race = race,
+                Ethnicity = ethnic,
+                "Visit number" = visitn,
+                # "Age mean" = age_mean, 
+                "Age baseline" = age_min, 
+                # "Age final" = age_max, 
+                "Follow up years" = age_diff,
+                # "Height mean" = h_mean, 
+                "Height baseline" = ht_min) %>% 
+  tbl_summary(by = group,
+              statistic = list(all_continuous() ~ "{mean} ({sd})") ) %>%
+  ## just display all the variables in one column
+  modify_header(label = "**Characteristics**") %>%
+  # update the column header
+  bold_labels() %>%
+  add_overall(last = TRUE) %>%
+  italicize_labels() 
+
+```
+
+
+```{r}
+library(tinytable)
+
+table2 |> as.data.frame() |> tt(theme = "void") |> save_tt(filename)
+filename <- file.path("table1.typ")
+
+```
+
+
+```{typst}
+#[
+#let nhead = 1;
+#let nrow = 15;
+#let ncol = 4;
+
+// start figure preamble
+#figure(
+  
+  kind: "tinytable",
+  supplement: none,
+// end figure preamble
+
+  #let fill-array = ( 
+    // tinytable cell fill after
+  )
+  #let style-array = ( 
+    // tinytable cell style after
+  )
+  #show table.cell: it => {
+    let tmp = it
+    let data = style-array.find(data => data.x == it.x and data.y == it.y)
+    if data != none {
+      set text(data.color)
+      set text(data.fontsize)
+      if data.underline == true { tmp = underline(tmp) }
+      if data.italic == true { tmp = emph(tmp) }
+      if data.bold == true { tmp = strong(tmp) }
+      if data.mono == true { tmp = math.mono(tmp) }
+      if data.strikeout == true { tmp = strike(tmp) }
+      tmp
+    } else {
+      tmp
+    }
+  }
+
+  #align(center, [
+
+  table( // tinytable table start
+    columns: (auto, auto, auto, auto),
+    stroke: none,
+    fill: (x, y) => {
+      let data = fill-array.find(data => data.x == x and data.y == y)
+      if data != none {
+        data.fill
+      }
+    },
+
+    // tinytable lines after
+
+    table.header(
+      repeat: true,
+[**Characteristics**], [**testing**, N = 457], [**training**, N = 913], [**Overall**, N = 1,370],
+    ),
+
+    // tinytable cell content after
+[___Genotype___       ], [NA         ], [NA         ], [NA         ],
+[One allele F508del   ], [158 (35%)  ], [319 (35%)  ], [477 (35%)  ],
+[Others or Unknown    ], [66 (14%)   ], [84 (9.2%)  ], [150 (11%)  ],
+[Two alleles F508del  ], [233 (51%)  ], [510 (56%)  ], [743 (54%)  ],
+[___Gender___         ], [NA         ], [NA         ], [NA         ],
+[Female               ], [240 (53%)  ], [453 (50%)  ], [693 (51%)  ],
+[Male                 ], [217 (47%)  ], [460 (50%)  ], [677 (49%)  ],
+[___Ethnicity___      ], [NA         ], [NA         ], [NA         ],
+[Hispanic             ], [19 (4.3%)  ], [24 (2.7%)  ], [43 (3.3%)  ],
+[Non-Hispanic         ], [421 (96%)  ], [853 (97%)  ], [1,274 (97%)],
+[Unknown              ], [17         ], [36         ], [53         ],
+[___Visit number___   ], [49 (25)    ], [48 (22)    ], [48 (23)    ],
+[___Age baseline___   ], [3.17 (0.15)], [3.17 (0.17)], [3.17 (0.16)],
+[___Follow up years___], [9.9 (3.6)  ], [10.0 (3.6) ], [9.9 (3.6)  ],
+[___Height baseline___], [94.2 (3.9) ], [94.1 (4.1) ], [94.1 (4.1) ],
+
+    table.footer(
+      repeat: false,
+      // tinytable notes after
+    ),
+
+  ) // end table
+
+  ]) // end align
+
+) // end figure
+]
+```
+
+
+
+
+
+
+
+
+
+

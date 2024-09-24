@@ -1,0 +1,66 @@
+---
+title: "Overall"
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warnings = FALSE,
+                      message = FALSE,
+                      comment = "#>",
+                      #results = "hide",
+                      digits = 0,
+                      error = FALSE)
+
+## clean the R environment
+graphics.off()
+rm(list = ls())
+freshr::freshr()
+
+## load packages
+library(here, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+library(gtsummary, quietly = TRUE)
+library(flextable, quietly = TRUE)
+library(nlme)
+library(splines)
+
+## check the directory for the file
+# here::dr_here()
+here::set_here()
+
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+
+```
+
+
+```{r}
+load("R/train_test.rda")
+all <- rbind(train, test) %>%
+  as.data.frame()
+```
+
+
+```{r fig.height=5, fig.width=7}
+plot <- all %>% 
+  ggplot(aes(x = time, y = ht, group = id, color = sex)) +
+  geom_line(alpha = 0.2, color = "grey") +
+  geom_smooth(aes(group = sex)) +
+  theme_bw() +
+  labs(x = "Time (yr)") +
+  labs(y = "Height (cm)") +
+  # ggthemes::scale_fill_tableau("Jewel Bright") + 
+  ## so far the best color composition
+  scale_color_manual(values = c("#eb1e2c", "#00A9FF")) +
+  ## facet_wrap("group") +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title = element_text(size = 16)) +
+  theme(legend.position = "none") 
+
+plot
+
+ggsave(paste0("figures/06_supp_figure_overall", Sys.Date(), ".png"))
+```

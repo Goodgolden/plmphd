@@ -24,6 +24,7 @@ library(here, quietly = TRUE)
 library(tidyverse, quietly = TRUE)
 library(gtsummary, quietly = TRUE)
 library(flextable, quietly = TRUE)
+library(devtools, quietly = TRUE)
 
 ## check the directory for the file
 here::dr_here()
@@ -95,6 +96,7 @@ create("plm2024", description = descriptionDetails)
 use_thattest("euclidean_df")
 use_test("euclidean_df")
 use_test("02_distance")
+use_test("09_people-like-me-dyn")
 ```
 
 ```{r}
@@ -161,4 +163,107 @@ coverage <- package_coverage()
 percent_coverage(coverage)
 
 use_coverage("plm2024", type = "codecov")
+
+usethis::use_build_ignore("results")
+usethis::use_build_ignore("figures")
+usethis::use_build_ignore(".qmd")
+
+library(devtools)
+load_all()
+
+check()
 ```
+
+
+article to around the rlang the tidyeval 
+the article and cran if possible vinaget
+if there is out-side packages has to be an article 
+
+
+@examples
+@export NAMESPACE
+
+you can step through in the example section walk through.
+Rstudio 
+
+details and description are separated 
+
+add links!
+documentation richly linked and function and packages.
+vignettes for the packages and URLs
+
+Examples: authentic usage do not use hard examples over there 
+what I am allowed to do in CRAN...
+
+`thisfunction()` [otherpkg::otherfunctions()] auto-link 
+fomated as code hyperlink for IDE and high-payoff
+
+the same package just use [olderfunction()]
+`vignette("stuff")` and `vignette("stuff", package = "pkg")`
+
+url_check() redirects to the other url,
+urlchecker::url_check()
+url_update() check every single time... do this by hands
+
+what is hard, for examples...
+readable and realistic code
+side effects are forbidden and side effects 
+cannot throw an error, how to fixed it but cannot in the examples...
+
+cannot use dontran
+
+@examplesIF rlang::is_interactive() true of false...
+
+
+```{r}
+use_vignette("people-like-me")
+## can only use packages depended on, Imports and Suggests
+## write an article for packagedown website and out of the packages...
+```
+
+
+man folder the documentation 
+there is no Vignettes they do not have home inside a source package...
+
+`R CMD check` just like tests in the run the examples and know this could run 
+vignette and big wierd test and rerender the vignette the r codes 
+
+a code long-time to run...
+
+```{r}
+# load_all() + code chuck
+# install in-dev package and knit
+# install(build_vignettes = TRUE)
+# devtools::build_rmd
+
+## everytime you change the code you have to rerun the vignette
+## 
+```
+
+I can run but CRAN cannot run 
+the examples as the eval chunk
+
+eval as @examplesIF
+
+a suggested package reuireNamespace and Sys.getenv file.exists
+eval to TRUE or FALSE
+
+r setup for all the chunks and eval = !eval
+
+
+## add readme
+
+```{r}
+library(usethis)
+library(testthat)
+
+# q: how to add readme files with testthat?
+# a: use_readme_rmd() and build_readme() 
+use_readme_rmd()
+build_readme() 
+
+```
+
+
+
+

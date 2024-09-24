@@ -1,0 +1,605 @@
+---
+title: "t8 and t14"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warnings = FALSE,
+                      message = FALSE,
+                      comment = "#>",
+                      #results = "hide",
+                      digits = 4,
+                      error = FALSE)
+
+## clean the R environment
+graphics.off()
+rm(list = ls())
+freshr::freshr()
+
+## load packages
+library(here, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+library(gtsummary, quietly = TRUE)
+library(flextable, quietly = TRUE)
+library(devtools, quietly = TRUE)
+
+load_all()
+
+## check the directory for the file
+# here::dr_here()
+here::set_here()
+
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+```
+
+## pullout functions
+
+need to be adjusted based on the simulation we run.
+
+```{r}
+#| eval: false
+pullout <- function(location,
+                    filename) {
+  load(paste0(location, filename))
+  sgl_n10 <- sgl_n10_t14 %>% 
+    map("centiles_observed") %>% 
+    map_dfr(~mutate(., bias = abs(actual - `50`),
+           mse = (actual - `50`)^2,
+           cov50 = ifelse(actual <= `75` & actual >= `25`, 1, 0),
+           cov80 = ifelse(actual <= `90` & actual >= `10`, 1, 0),
+           cov90 = ifelse(actual <= `95` & actual >= `5`, 1, 0)) %>% 
+             colMeans()) %>%
+    dplyr::select(bias, mse, cov50, cov80, cov90) %>%
+    colMeans()
+  sgl_n30 <- sgl_n30_t14 %>% 
+    map("centiles_observed") %>% 
+    map_dfr(~mutate(., bias = abs(actual - `50`),
+           mse = (actual - `50`)^2,
+           cov50 = ifelse(actual <= `75` & actual >= `25`, 1, 0),
+           cov80 = ifelse(actual <= `90` & actual >= `10`, 1, 0),
+           cov90 = ifelse(actual <= `95` & actual >= `5`, 1, 0)) %>% 
+             colMeans()) %>%
+    dplyr::select(bias, mse, cov50, cov80, cov90) %>%
+    colMeans()
+  sgl_n25 <- sgl_n25_t14 %>% 
+    map("centiles_observed") %>% 
+    map_dfr(~mutate(., bias = abs(actual - `50`),
+           mse = (actual - `50`)^2,
+           cov50 = ifelse(actual <= `75` & actual >= `25`, 1, 0),
+           cov80 = ifelse(actual <= `90` & actual >= `10`, 1, 0),
+           cov90 = ifelse(actual <= `95` & actual >= `5`, 1, 0)) %>% 
+             colMeans()) %>%
+    dplyr::select(bias, mse, cov50, cov80, cov90) %>%
+    colMeans()
+  sgl_n50 <- sgl_n50_t14 %>% 
+    map("centiles_observed") %>% 
+    map_dfr(~mutate(., bias = abs(actual - `50`),
+           mse = (actual - `50`)^2,
+           cov50 = ifelse(actual <= `75` & actual >= `25`, 1, 0),
+           cov80 = ifelse(actual <= `90` & actual >= `10`, 1, 0),
+           cov90 = ifelse(actual <= `95` & actual >= `5`, 1, 0)) %>% 
+             colMeans()) %>%
+    dplyr::select(bias, mse, cov50, cov80, cov90) %>%
+    colMeans()
+  return(list(sgl_n10 = sgl_n10,
+              sgl_n25 = sgl_n25,
+              sgl_n30 = sgl_n30,
+              sgl_n50 = sgl_n50))
+}
+
+```
+
+## Time 14
+
+```{r}
+#| eval: false
+
+folder1 <- "single_t14"
+folder2 <- "results_single_t14"
+
+file_location <- paste0("results/", folder1, "/", folder2, "/")
+
+files <- list.files(path = file_location, pattern = ".Rdata")
+sim_ss <- map_dfr(files, ~pullout(file_location, .),
+                     .progress = list(type = "iterator",
+                                      format = "Calculating {cli::pb_bar} {cli::pb_percent}",
+                                      clear = TRUE))
+sim_ss <- sim_ss %>%
+  mutate(term = rep(c("bias", "mse", "coverage50", 
+                      "coverage80", "coverage90"), 
+                    length(files)))
+
+save(sim_ss, file = paste0("results/S04_single_simulation_t14_", Sys.Date(), ".Rdata"))
+```
+
+### plots
+
+```{r}
+load("results/S04_single_simulation_n10_2024-08-08.Rdata")
+data1 <- sim_ss %>% 
+  mutate(sgl_n10 = as.numeric(sgl_n),
+         lmm = as.numeric(lmm)) %>%
+  pivot_longer(cols = -term,
+               names_to = "method",
+               values_to = "values") %>% 
+  mutate(method = factor(method, levels = c("sgl_n10", "lmm"))) %>%
+  filter(method %in% c("lmm"))
+load("results/S04_single_simulation_t14_2024-09-05.Rdata")
+data2 <- sim_ss %>% 
+  mutate(sgl_n10 = as.numeric(sgl_n10),
+         sgl_n25 = as.numeric(sgl_n25),
+         sgl_n30 = as.numeric(sgl_n30),
+         sgl_n50 = as.numeric(sgl_n50)) %>%
+  pivot_longer(cols = -term,
+               names_to = "method",
+               values_to = "values") %>% 
+  mutate(method = factor(method, 
+                         levels = c("sgl_n10", "sgl_n25",
+                                    "sgl_n30", "sgl_n50"))) 
+data <- rbind(data1, data2) %>%
+  mutate(method = factor(method, 
+                         levels = c("sgl_n10", "sgl_n25", 
+                                    "sgl_n30", "sgl_n50", 
+                                    "lmm")))
+
+```
+
+```{r}
+library(latex2exp)
+bias_plot <- data %>%
+  filter(term == "bias") %>%
+  ggplot(aes(x = method, y = as.numeric(values), group = factor(method))) +
+  scale_x_discrete(labels = c("sgl_n10" = parse(text = latex2exp::TeX("$S_{\\kappa = 10}^{t=14}$")),
+                              "sgl_n25" = parse(text = latex2exp::TeX("$S_{\\kappa = 25}^{t=14}$")),
+                              "sgl_n30" = parse(text = latex2exp::TeX("$S_{\\kappa = 30}^{t=14}$")),
+                              "sgl_n50" = parse(text = latex2exp::TeX("$S_{\\kappa = 50}^{t=14}$")),
+                              "lmm" = "LMM")) +
+  geom_point(aes(color = method)) +
+  geom_boxplot(aes(fill = method)) +
+  theme_bw() +
+  labs(x = NULL) +
+  labs(y = "MAE") +
+  ggthemes::scale_fill_tableau("Jewel Bright") + 
+  ## so far the best color composition
+  ggthemes::scale_colour_tableau("Jewel Bright") +
+  ## facet_wrap("group") +
+  theme(legend.position = "none") +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title.y = element_text(size = 16)) 
+
+rmse_plot <- data %>%
+  filter(term == "mse") %>% 
+  mutate(values = sqrt(as.numeric(values))) %>%
+  ggplot(aes(x = method, y = as.numeric(values), group = method)) +
+  geom_point(aes(color = method)) +
+  geom_boxplot(aes(fill = method)) +
+  theme_bw() +
+  labs(x = NULL) +
+  labs(y = "RMSE") +
+  ggthemes::scale_fill_tableau("Jewel Bright") + 
+  ## so far the best color composition
+  ggthemes::scale_colour_tableau("Jewel Bright") +
+  ## facet_wrap("group") +
+  theme(legend.position = "none") +
+  scale_x_discrete(labels = c("sgl_n10" = parse(text = latex2exp::TeX("$S_{\\kappa = 10}^{t=14}$")),
+                              "sgl_n25" = parse(text = latex2exp::TeX("$S_{\\kappa = 25}^{t=14}$")),
+                              "sgl_n30" = parse(text = latex2exp::TeX("$S_{\\kappa = 30}^{t=14}$")),
+                              "sgl_n50" = parse(text = latex2exp::TeX("$S_{\\kappa = 50}^{t=14}$")),
+                              "lmm" = "LMM")) +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title.y = element_text(size = 16)) 
+
+cov50_plot <- data %>% 
+  filter(term == "coverage50") %>% 
+  ggplot(aes(x = method, y = as.numeric(values)),
+         group = method) +
+  geom_point(aes(color = method)) +
+  geom_boxplot(aes(fill = method)) +
+  theme_bw() +
+  labs(x = NULL) +
+  labs(y = "50% CR") +
+  ggthemes::scale_fill_tableau("Jewel Bright") + 
+  ## so far the best color composition
+  ggthemes::scale_colour_tableau("Jewel Bright") +
+  ## facet_wrap("group") +
+  theme(legend.position = "none") +
+  scale_x_discrete(labels = c("sgl_n10" = parse(text = latex2exp::TeX("$S_{\\kappa = 10}^{t=14}$")),
+                              "sgl_n25" = parse(text = latex2exp::TeX("$S_{\\kappa = 25}^{t=14}$")),
+                              "sgl_n30" = parse(text = latex2exp::TeX("$S_{\\kappa = 30}^{t=14}$")),
+                              "sgl_n50" = parse(text = latex2exp::TeX("$S_{\\kappa = 50}^{t=14}$")),
+                              "lmm" = "LMM")) +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title.y = element_text(size = 16)) 
+
+
+cov80_plot <- data %>% 
+          filter(term == "coverage80") %>%
+          ggplot(aes(x = method, y = as.numeric(values)),
+                 group = method) +
+          geom_point(aes(color = method)) +
+          geom_boxplot(aes(fill = method)) +
+          theme_bw() +
+         labs(x = NULL) +
+          labs(y = "80% CR") +
+          ggthemes::scale_fill_tableau("Jewel Bright") + 
+          ## so far the best color composition
+          ggthemes::scale_colour_tableau("Jewel Bright") +
+          ## facet_wrap("group") +
+          theme(legend.position = "none") +
+  scale_x_discrete(labels = c("sgl_n10" = parse(text = latex2exp::TeX("$S_{\\kappa = 10}^{t=14}$")),
+                              "sgl_n25" = parse(text = latex2exp::TeX("$S_{\\kappa = 25}^{t=14}$")),
+                              "sgl_n30" = parse(text = latex2exp::TeX("$S_{\\kappa = 30}^{t=14}$")),
+                              "sgl_n50" = parse(text = latex2exp::TeX("$S_{\\kappa = 50}^{t=14}$")),
+                              "lmm" = "LMM")) +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title.y = element_text(size = 16)) 
+          ## the tableau is in the ggthemes
+
+cov90_plot <- data %>% 
+          filter(term == "coverage90") %>%
+          ggplot(aes(x = method, y = as.numeric(values)),
+                 group = method) +
+          geom_point(aes(color = method)) +
+          geom_boxplot(aes(fill = method)) +
+          theme_bw() +
+          labs(x = NULL) +
+          labs(y = "90% CR") +
+          ggthemes::scale_fill_tableau("Jewel Bright") + 
+          ## so far the best color composition
+          ggthemes::scale_colour_tableau("Jewel Bright") +
+          ## facet_wrap("group") +
+          theme(legend.position = "none") +
+  scale_x_discrete(labels = c("sgl_n10" = parse(text = latex2exp::TeX("$S_{\\kappa = 10}^{t=14}$")),
+                              "sgl_n25" = parse(text = latex2exp::TeX("$S_{\\kappa = 25}^{t=14}$")),
+                              "sgl_n30" = parse(text = latex2exp::TeX("$S_{\\kappa = 30}^{t=14}$")),
+                              "sgl_n50" = parse(text = latex2exp::TeX("$S_{\\kappa = 50}^{t=14}$")),
+                              "lmm" = "LMM")) +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title.y = element_text(size = 16)) 
+          ## the tableau is in the ggthemes
+# cov90_plot
+```
+
+```{r fig.width=5, fig.height=3, warning=FALSE}
+bias_plot
+ggsave(paste0("figures/S04_t14_single_five_1bias_", Sys.Date(), ".png"))
+rmse_plot
+ggsave(paste0("figures/S04_t14_single_five_2rmse_", Sys.Date(), ".png"))
+cov50_plot + 
+  geom_hline(yintercept = 0.5, linetype="dashed", color = "indianred")
+ggsave(paste0("figures/S04_t14_single_five_3cov50_", Sys.Date(), ".png"))
+cov80_plot +
+  geom_hline(yintercept = 0.8, linetype="dashed", color = "indianred")
+ggsave(paste0("figures/S04_t14_single_five_4cov80_", Sys.Date(), ".png"))
+cov90_plot +
+  geom_hline(yintercept = 0.9, linetype="dashed", color = "indianred")
+ggsave(paste0("figures/S04_t14_single_five_5cov90_", Sys.Date(), ".png"))
+
+
+```
+
+
+```{r, fig.height= 12, fig.width=6}
+library(ggpubr)
+
+figure1 <- ggarrange(bias_plot + ylim(5.5, 7.2), 
+                    # + theme(axis.text.x=element_blank()),
+                    rmse_plot + ylim(7.4, 9.5),
+                    # + theme(axis.text.x=element_blank()),
+                    # cov50_plot,
+                    # + theme(axis.text.x=element_blank()), 
+                    cov50_plot +
+                      ylim(0.35, 0.6) +
+                      geom_hline(yintercept = 0.5,
+                                 linetype = "dashed", 
+                                 color = "indianred"),
+                    cov80_plot +
+                       ylim(0.65, 0.9) +
+                      geom_hline(yintercept = 0.8,
+                                 linetype = "dashed", 
+                                 color = "indianred"),
+                    cov90_plot +
+                      ylim(0.75, 0.95) + 
+                      geom_hline(yintercept = 0.9,
+                                 linetype = "dashed", 
+                                 color = "indianred"),
+                    # + theme(axis.text.x=element_blank()),
+                    ncol = 1, nrow = 5)
+
+figure1
+ggsave(paste0("figures/S04_t14_single_five_6combine_", Sys.Date(), ".png"))
+```
+
+
+## Time 8
+
+
+```{r}
+#| eval: false
+pullout <- function(location,
+                    filename) {
+  load(paste0(location, filename))
+  sgl_n10 <- sgl_n10_t8 %>% 
+    map("centiles_observed") %>% 
+    map_dfr(~mutate(., bias = abs(actual - `50`),
+           mse = (actual - `50`)^2,
+           cov50 = ifelse(actual <= `75` & actual >= `25`, 1, 0),
+           cov80 = ifelse(actual <= `90` & actual >= `10`, 1, 0),
+           cov90 = ifelse(actual <= `95` & actual >= `5`, 1, 0)) %>% 
+             colMeans()) %>%
+    dplyr::select(bias, mse, cov50, cov80, cov90) %>%
+    colMeans()
+  sgl_n30 <- sgl_n30_t8 %>% 
+    map("centiles_observed") %>% 
+    map_dfr(~mutate(., bias = abs(actual - `50`),
+           mse = (actual - `50`)^2,
+           cov50 = ifelse(actual <= `75` & actual >= `25`, 1, 0),
+           cov80 = ifelse(actual <= `90` & actual >= `10`, 1, 0),
+           cov90 = ifelse(actual <= `95` & actual >= `5`, 1, 0)) %>% 
+             colMeans()) %>%
+    dplyr::select(bias, mse, cov50, cov80, cov90) %>%
+    colMeans()
+  sgl_n25 <- sgl_n25_t8 %>% 
+    map("centiles_observed") %>% 
+    map_dfr(~mutate(., bias = abs(actual - `50`),
+           mse = (actual - `50`)^2,
+           cov50 = ifelse(actual <= `75` & actual >= `25`, 1, 0),
+           cov80 = ifelse(actual <= `90` & actual >= `10`, 1, 0),
+           cov90 = ifelse(actual <= `95` & actual >= `5`, 1, 0)) %>% 
+             colMeans()) %>%
+    dplyr::select(bias, mse, cov50, cov80, cov90) %>%
+    colMeans()
+  sgl_n50 <- sgl_n50_t8 %>% 
+    map("centiles_observed") %>% 
+    map_dfr(~mutate(., bias = abs(actual - `50`),
+           mse = (actual - `50`)^2,
+           cov50 = ifelse(actual <= `75` & actual >= `25`, 1, 0),
+           cov80 = ifelse(actual <= `90` & actual >= `10`, 1, 0),
+           cov90 = ifelse(actual <= `95` & actual >= `5`, 1, 0)) %>% 
+             colMeans()) %>%
+    dplyr::select(bias, mse, cov50, cov80, cov90) %>%
+    colMeans()
+  return(list(sgl_n10 = sgl_n10,
+              sgl_n25 = sgl_n25,
+              sgl_n30 = sgl_n30,
+              sgl_n50 = sgl_n50))
+}
+
+```
+
+
+```{r}
+#| eval: false
+
+folder1 <- "single_t8"
+folder2 <- "results"
+
+file_location <- paste0("results/", folder1, "/", folder2, "/")
+
+files <- list.files(path = file_location, pattern = ".Rdata")
+length(files)
+
+sim_ss <- map_dfr(files, ~pullout(file_location, .),
+                     .progress = list(type = "iterator",
+                                      format = "Calculating {cli::pb_bar} {cli::pb_percent}",
+                                      clear = TRUE))
+sim_ss <- sim_ss %>%
+  mutate(term = rep(c("bias", "mse", "coverage50", 
+                      "coverage80", "coverage90"), 
+                    length(files)))
+
+save(sim_ss, file = paste0("results/S04_single_simulation_t8_", Sys.Date(), ".Rdata"))
+```
+
+
+### plots
+
+```{r}
+load("results/S04_single_simulation_n10_2024-08-08.Rdata")
+data1 <- sim_ss %>% 
+  mutate(sgl_n10 = as.numeric(sgl_n),
+         lmm = as.numeric(lmm)) %>%
+  pivot_longer(cols = -term,
+               names_to = "method",
+               values_to = "values") %>% 
+  mutate(method = factor(method, levels = c("sgl_n10", "lmm"))) %>%
+  filter(method %in% c("lmm"))
+load("results/S04_single_simulation_t8_2024-09-06.Rdata")
+data2 <- sim_ss %>% 
+  mutate(sgl_n10 = as.numeric(sgl_n10),
+         sgl_n25 = as.numeric(sgl_n25),
+         sgl_n30 = as.numeric(sgl_n30),
+         sgl_n50 = as.numeric(sgl_n50)) %>%
+  pivot_longer(cols = -term,
+               names_to = "method",
+               values_to = "values") %>% 
+  mutate(method = factor(method, 
+                         levels = c("sgl_n10", "sgl_n25",
+                                    "sgl_n30", "sgl_n50"))) 
+data <- rbind(data1, data2) %>%
+  mutate(method = factor(method, 
+                         levels = c("sgl_n10", "sgl_n25", 
+                                    "sgl_n30", "sgl_n50", 
+                                    "lmm")))
+
+```
+
+```{r}
+library(latex2exp)
+bias_plot <- data %>%
+  filter(term == "bias") %>%
+  ggplot(aes(x = method, y = as.numeric(values), group = factor(method))) +
+  scale_x_discrete(labels = c("sgl_n10" = parse(text = latex2exp::TeX("$S_{\\kappa = 10}^{t=8}$")),
+                              "sgl_n25" = parse(text = latex2exp::TeX("$S_{\\kappa = 25}^{t=8}$")),
+                              "sgl_n30" = parse(text = latex2exp::TeX("$S_{\\kappa = 30}^{t=8}$")),
+                              "sgl_n50" = parse(text = latex2exp::TeX("$S_{\\kappa = 50}^{t=8}$")),
+                              "lmm" = "LMM")) +
+  geom_point(aes(color = method)) +
+  geom_boxplot(aes(fill = method)) +
+  theme_bw() +
+  labs(x = NULL) +
+  labs(y = "MAE") +
+  ggthemes::scale_fill_tableau("Jewel Bright") + 
+  ## so far the best color composition
+  ggthemes::scale_colour_tableau("Jewel Bright") +
+  ## facet_wrap("group") +
+  theme(legend.position = "none") +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title.y = element_text(size = 16)) 
+
+rmse_plot <- data %>%
+  filter(term == "mse") %>% 
+  mutate(values = sqrt(as.numeric(values))) %>%
+  ggplot(aes(x = method, y = as.numeric(values), group = method)) +
+  geom_point(aes(color = method)) +
+  geom_boxplot(aes(fill = method)) +
+  theme_bw() +
+  labs(x = NULL) +
+  labs(y = "RMSE") +
+  ggthemes::scale_fill_tableau("Jewel Bright") + 
+  ## so far the best color composition
+  ggthemes::scale_colour_tableau("Jewel Bright") +
+  ## facet_wrap("group") +
+  theme(legend.position = "none") +
+  scale_x_discrete(labels = c("sgl_n10" = parse(text = latex2exp::TeX("$S_{\\kappa = 10}^{t=8}$")),
+                              "sgl_n25" = parse(text = latex2exp::TeX("$S_{\\kappa = 25}^{t=8}$")),
+                              "sgl_n30" = parse(text = latex2exp::TeX("$S_{\\kappa = 30}^{t=8}$")),
+                              "sgl_n50" = parse(text = latex2exp::TeX("$S_{\\kappa = 50}^{t=8}$")),
+                              "lmm" = "LMM")) +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title.y = element_text(size = 16)) 
+
+cov50_plot <- data %>% 
+  filter(term == "coverage50") %>% 
+  ggplot(aes(x = method, y = as.numeric(values)),
+         group = method) +
+  geom_point(aes(color = method)) +
+  geom_boxplot(aes(fill = method)) +
+  theme_bw() +
+  labs(x = NULL) +
+  labs(y = "50% CR") +
+  ggthemes::scale_fill_tableau("Jewel Bright") + 
+  ## so far the best color composition
+  ggthemes::scale_colour_tableau("Jewel Bright") +
+  ## facet_wrap("group") +
+  theme(legend.position = "none") +
+  scale_x_discrete(labels = c("sgl_n10" = parse(text = latex2exp::TeX("$S_{\\kappa = 10}^{t=8}$")),
+                              "sgl_n25" = parse(text = latex2exp::TeX("$S_{\\kappa = 25}^{t=8}$")),
+                              "sgl_n30" = parse(text = latex2exp::TeX("$S_{\\kappa = 30}^{t=8}$")),
+                              "sgl_n50" = parse(text = latex2exp::TeX("$S_{\\kappa = 50}^{t=8}$")),
+                              "lmm" = "LMM")) +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title.y = element_text(size = 16)) 
+
+cov80_plot <- data %>% 
+          filter(term == "coverage80") %>%
+          ggplot(aes(x = method, y = as.numeric(values)),
+                 group = method) +
+          geom_point(aes(color = method)) +
+          geom_boxplot(aes(fill = method)) +
+          theme_bw() +
+         labs(x = NULL) +
+          labs(y = "80% CR") +
+          ggthemes::scale_fill_tableau("Jewel Bright") + 
+          ## so far the best color composition
+          ggthemes::scale_colour_tableau("Jewel Bright") +
+          ## facet_wrap("group") +
+          theme(legend.position = "none") +
+  scale_x_discrete(labels = c("sgl_n10" = parse(text = latex2exp::TeX("$S_{\\kappa = 10}^{t=8}$")),
+                              "sgl_n25" = parse(text = latex2exp::TeX("$S_{\\kappa = 25}^{t=8}$")),
+                              "sgl_n30" = parse(text = latex2exp::TeX("$S_{\\kappa = 30}^{t=8}$")),
+                              "sgl_n50" = parse(text = latex2exp::TeX("$S_{\\kappa = 50}^{t=8}$")),
+                              "lmm" = "LMM")) +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title.y = element_text(size = 16)) 
+
+
+cov90_plot <- data %>% 
+          filter(term == "coverage90") %>%
+          ggplot(aes(x = method, y = as.numeric(values)),
+                 group = method) +
+          geom_point(aes(color = method)) +
+          geom_boxplot(aes(fill = method)) +
+          theme_bw() +
+          labs(x = NULL) +
+          labs(y = "90% CR") +
+          ggthemes::scale_fill_tableau("Jewel Bright") + 
+          ## so far the best color composition
+          ggthemes::scale_colour_tableau("Jewel Bright") +
+          ## facet_wrap("group") +
+          theme(legend.position = "none") +
+  scale_x_discrete(labels = c("sgl_n10" = parse(text = latex2exp::TeX("$S_{\\kappa = 10}^{t=8}$")),
+                              "sgl_n25" = parse(text = latex2exp::TeX("$S_{\\kappa = 25}^{t=8}$")),
+                              "sgl_n30" = parse(text = latex2exp::TeX("$S_{\\kappa = 30}^{t=8}$")),
+                              "sgl_n50" = parse(text = latex2exp::TeX("$S_{\\kappa = 50}^{t=8}$")),
+                              "lmm" = "LMM")) +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title.y = element_text(size = 16)) 
+          ## the tableau is in the ggthemes
+# cov90_plot
+```
+
+```{r fig.width=5, fig.height=3, warning=FALSE}
+bias_plot
+ggsave(paste0("figures/S04_t8_single_five_1bias_", Sys.Date(), ".png"))
+rmse_plot
+ggsave(paste0("figures/S04_t8_single_five_2rmse_", Sys.Date(), ".png"))
+cov50_plot + 
+  geom_hline(yintercept = 0.5, linetype="dashed", color = "indianred")
+ggsave(paste0("figures/S04_t8_single_five_3cov50_", Sys.Date(), ".png"))
+cov80_plot +
+  geom_hline(yintercept = 0.8, linetype="dashed", color = "indianred")
+ggsave(paste0("figures/S04_t8_single_five_4cov80_", Sys.Date(), ".png"))
+cov90_plot +
+  geom_hline(yintercept = 0.9, linetype="dashed", color = "indianred")
+ggsave(paste0("figures/S04_t8_single_five_5cov90_", Sys.Date(), ".png"))
+
+
+```
+
+
+```{r, fig.height= 12, fig.width=6}
+library(ggpubr)
+
+figure1 <- ggarrange(bias_plot + ylim(5.5, 7.2), 
+                    # + theme(axis.text.x=element_blank()),
+                    rmse_plot + ylim(7.4, 9.5),
+                    # + theme(axis.text.x=element_blank()),
+                    # cov50_plot,
+                    # + theme(axis.text.x=element_blank()), 
+                    cov50_plot +
+                      ylim(0.35, 0.6) +
+                      geom_hline(yintercept = 0.5,
+                                 linetype = "dashed", 
+                                 color = "indianred"),
+                    cov80_plot +
+                       ylim(0.65, 0.9) +
+                      geom_hline(yintercept = 0.8,
+                                 linetype = "dashed", 
+                                 color = "indianred"),
+                    cov90_plot +
+                      ylim(0.75, 0.95) + 
+                      geom_hline(yintercept = 0.9,
+                                 linetype = "dashed", 
+                                 color = "indianred"),
+                    # + theme(axis.text.x=element_blank()),
+                    ncol = 1, nrow = 5)
+
+figure1
+ggsave(paste0("figures/S04_t8_single_five_6combine_", Sys.Date(), ".png"))
+```
+
+
+

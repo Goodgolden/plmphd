@@ -1,0 +1,162 @@
+---
+title: "Linear Model"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warnings = FALSE,
+                      message = FALSE,
+                      comment = "#>",
+                      #results = "hide",
+                      digits = 0,
+                      error = FALSE)
+
+## clean the R environment
+graphics.off()
+rm(list = ls())
+freshr::freshr()
+
+## load packages
+library(here, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+library(gtsummary, quietly = TRUE)
+library(flextable, quietly = TRUE)
+library(nlme)
+library(splines)
+
+## check the directory for the file
+# here::dr_here()
+here::set_here()
+
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+
+```
+
+```{r}
+load("R/train_test.rda")
+all <- rbind(train, test) %>%
+  as.data.frame()
+```
+
+```{r}
+ctrl <- lmeControl(opt = 'optim')
+
+
+fit1 <-  lme(ht ~ bs(time, degree = 3, knots = 10) * sex + genotype - 1,
+              random = ~ 1| id,
+              control = ctrl,
+              data = all)
+glance1 <- broom.mixed::glance(fit1) %>%
+  mutate(fixed = "bs(time, knots = 10, degree = 3) * sex + genotype",
+         random = "1 | id")
+
+fit2 <-  lme(ht ~ bs(time, degree = 3, knots = 10) * sex + genotype - 1,
+              random = ~ 1 + time| id,
+              control = ctrl,
+              data = all)
+glance2 <- broom.mixed::glance(fit2) %>%
+  mutate(fixed = "bs(time, knots = 10, degree = 3) * sex + genotype",
+         random = "1 + time| id")
+
+fit3 <-  lme(ht ~ bs(time, degree = 3, knots = c(5, 10)) * sex + genotype - 1,
+              random = ~ 1| id,
+              control = ctrl,
+              data = all)
+glance3 <- broom.mixed::glance(fit3) %>%
+  mutate(fixed = "bs(time, knots = c(5, 10), degree = 3) * sex + genotype",
+         random = "1 | id")
+
+fit4 <-  lme(ht ~ bs(time, degree = 3, knots = c(5, 10)) * sex + genotype - 1,
+              random = ~ 1 + time| id,
+              control = ctrl,
+              data = all)
+glance4 <- broom.mixed::glance(fit4) %>%
+  mutate(fixed = "bs(time, knots = c(5, 10), degree = 3) * sex + genotype",
+         random = "1 + time| id")
+
+fit5 <-  lme(ht ~ bs(time, degree = 3, knots = c(5, 10, 15)) * sex + genotype - 1,
+              random = ~ 1| id,
+              control = ctrl,
+              data = all)
+glance5 <- broom.mixed::glance(fit5) %>%
+  mutate(fixed = "bs(time, knots = c(5, 10, 15), degree = 3) * sex + genotype",
+         random = "1 + time| id")
+
+fit6 <-  lme(ht ~ bs(time, degree = 3, knots = c(5, 10, 15)) * sex + genotype - 1,
+              random = ~ 1 + bs(time, df = 4, degree = 3, intercept = FALSE)| id,
+              control = ctrl,
+              data = all)
+glance6 <- broom.mixed::glance(fit6) %>%
+  mutate(fixed = "bs(time, knots = c(5, 10, 15), degree = 3) * sex + genotype",
+         random = "1 + bs(time, df = 4, degree = 3)|id")
+
+fit7 <-  lme(ht ~ bs(time, knots = c(10, 12, 15), degree = 3) * sex + genotype - 1,
+              random = ~ 1 + bs(time, df = 5, degree = 3, intercept = FALSE)| id,
+              control = ctrl,
+              data = all)
+glance7 <- broom.mixed::glance(fit7) %>%
+  mutate(fixed = "bs(time, knots = c(10, 12, 15), degree = 3) * sex + genotype",
+         random = "1 + bs(time, df = 5, degree = 3)| id")
+
+# df 3 = intercept 0 + knots 3
+fit8 <-  lme(ht ~ bs(time, knots = c(10, 12, 15), degree = 3) * sex + genotype - 1,
+              random = ~ 1 + bs(time, df = 4, degree = 2, intercept = FALSE)| id,
+              control = ctrl,
+              data = all)
+glance8 <- broom.mixed::glance(fit8) %>%
+  mutate(fixed = "bs(time, knots = c(10, 12, 15), degree = 3) * sex + genotype",
+         random = "1 + bs(time, df = 4, degree  = 2)|id")
+
+## df 4 = linear 0 + knots 3
+fit9 <-  lme(ht ~ bs(time, knots = c(10, 12, 15), degree = 3) * sex + genotype - 1,
+              random = ~ 1 + bs(time, df = 4, degree = 1, intercept = FALSE)| id,
+              control = ctrl,
+              data = all)
+glance9 <- broom.mixed::glance(fit9) %>%
+  mutate(fixed = "bs(time, knots = c(10, 12, 15), degree = 3) * sex + genotype",
+         random = "1 + bs(time, df = 4, degree = 1)| id")
+
+## df 5 = quadratic 2 + knots 3
+fit10 <-  lme(ht ~ bs(time, knots = c(10, 12, 15), degree = 3) * sex + genotype - 1,
+              random = ~ 1 + bs(time, df = 5, degree = 2, intercept = FALSE)| id,
+              control = ctrl,
+              data = train)
+glance10 <- broom.mixed::glance(fit10) %>%
+  mutate(fixed = "bs(time, knots = c(10, 12, 15), degree = 3) * sex + genotype",
+         random = "1 + bs(time, df = 5, degree = 2)| id")
+
+fit11 <-  lme(ht ~ bs(time, knots = c(5, 10, 15), degree = 3) * sex + genotype - 1,
+              random = ~ 1 + bs(time, df = 5, degree = 2, intercept = FALSE)| id,
+              control = ctrl,
+              data = all)
+glance11 <- broom.mixed::glance(fit11) %>%
+  mutate(fixed = "bs(time, knots = c(5, 10, 15), degree = 3) * sex + genotype",
+         random = "1 + bs(time, df = 5, degree = 2)| id")
+
+fit12 <-  lme(ht ~ bs(time, knots = c(5, 10, 15), degree = 3) * sex + genotype - 1,
+              random = ~ 1 + bs(time, df = 4, degree = 1, intercept = FALSE)| id,
+              control = ctrl,
+              data = all)
+glance12 <- broom.mixed::glance(fit11) %>%
+  mutate(fixed = "bs(time, knots = c(5, 10, 15), degree = 3) * sex + genotype",
+         random = "1 + bs(time, df = 4, degree = 1)| id")
+
+```
+
+```{r "glance"}
+result <- rbind(glance1, glance2, glance3, 
+                glance4, glance5, glance6,
+                glance7, glance8, glance9, 
+                glance10, glance11, glance12) %>%
+  as.data.frame() %>%
+  dplyr::select(-nobs, -sigma, -logLik) %>%
+  dplyr::select(fixed, random, everything()) %>%
+  arrange(AIC)
+
+library(xtable)
+
+result
+
+```
