@@ -1,7 +1,6 @@
 # First level imputation -------------------------------------------------------
 
-
-## 1.1.1 impute_brokenstick -----------------------------------------------------
+## 1.1 impute_brokenstick -----------------------------------------------------
 #' Title Imputation with `brokenstick::brokenstick()`
 #' @description
 #' The predictions from a broken stick model coincide with
@@ -84,23 +83,9 @@ impute_brokenstick <- function(outcome_var,
   return(data_new)
 }
 
-## 1.1.2 impute_kernel-----------------------------------------------------------
-impute_kernel <- function(kernel,
-                          time_var,
-                          outcome_var,
-                          ...) {
-
-}
-
-
-## 1.1.3 impute_random_walk -----------------------------------------------------
-impute_rw2 <- function(...) {
-
-}
-
 # Second level imputation ------------------------------------------------------
 
-## 1.2.1 linear_impute ----------------------------------------------------------
+## 1.2 linear_impute ----------------------------------------------------------
 
 #' Title Linear regression for people-like-me methods
 #'
@@ -168,7 +153,22 @@ linear_impute <- function(lm_formula,
     return(results)
     }
 
-
+## 1.3 multiple_impute --------------------------------------------------------
+#' Title
+#'
+#' @param lm_formula
+#' @param data_impute
+#' @param data_test
+#' @param id_var
+#' @param outcome_var
+#' @param time_var
+#' @param anchor_time
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 multiple_impute <- function(lm_formula,
                           data_impute,
                           data_test,

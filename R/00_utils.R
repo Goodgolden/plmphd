@@ -40,7 +40,7 @@ letters_only <- function(x) {!grepl("[^A-Za-z]", x)}
 #' @param x the string element
 #'
 #' @return a Boolean result as TRUE or FALSE
-#' @export 
+#' @export
 #'
 numbers_only <- function(x) {!grepl("\\D", x)}
 
@@ -65,52 +65,15 @@ numbers_only <- function(x) {!grepl("\\D", x)}
   )
   toset <- !(names(op.devtools) %in% names(op))
   if(any(toset)) options(op.devtools[toset])
-  
+
   invisible()
 }
-
-singletime_n <- function(Dmatrix,
-                         match_time,
-                         match_num) {
-  matching <<- Dmatrix %>%
-    filter(as.numeric(rownames(.)) == match_time) %>%
-    t() %>%
-    ## using Frobenius norm
-    # apply(lb_sub, 2, norm, type = "f") %>%
-    as.data.frame() %>%
-    dplyr::select(diff = 1) %>%
-    rownames_to_column("id") %>%
-    arrange(abs(diff)) %>%
-    slice(1:match_num)
-  
-  return(matching)
-}
-
-## 0.8 euclidean_n -----------------
-euclidean_n <- function(Dmatrix,
-                        match_num) {
-  matching <<- Dmatrix %>%
-    apply(2, norm, type = "2") %>%
-    ## using Frobenius norm
-    # apply(lb_sub, 2, norm, type = "f") %>%
-    as.data.frame() %>%
-    dplyr::select(diff = 1) %>%
-    rownames_to_column("id") %>%
-    arrange(diff) %>%
-    slice(1:match_num)
-  
-  return(matching)
-}
-
 
 ## 0.1 norm L2 {{{--------------------------------------------------------------
 #' Title L2 or other norms
 #'
-#' @param v
-#'
+#' @param v any numeric vector
 #' @return
-#' @export
-#'
 norm2 <- function(v) {
   sqrt(sum(v^2))
 }
@@ -119,33 +82,21 @@ norm2 <- function(v) {
 
 
 ## 0.2 not all na {{{-----------------------------------------------------------
-#' Title
-#'
-#' @param x
-#'
+#' Title Checking there is not all NA
+#' @param x the target dataset
 #' @return
-#' @export
-#'
-#' @examples
 not_all_na <- function(x) {
   any(!is.na(x))
 }
 
 
-
 ## 0.3 not any na {{{-----------------------------------------------------------
-#' Title
-#'
-#' @param x
-#'
+#' Title Checking there is any not NA
+#' @param x the target dataset
 #' @return
-#' @export
-#'
-#' @examples
 not_any_na <- function(x) {
   all(!is.na(x))
 }
-
 
 
 ## 0.4 not in {{{---------------------------------------------------------------
@@ -176,7 +127,7 @@ euclidean_df <- function(Dmatrix,
     dplyr::select(diff = 1) %>%
     rownames_to_column("id") %>%
     arrange(diff)
-  
+
   return(matching)
 }
 
@@ -193,34 +144,35 @@ euclidean_df <- function(Dmatrix,
 #' @examples
 mahalanobis_df <- function(Dmatrix,
                            center) {
-  
+
   def <- nrow(Dmatrix)
   df <- Dmatrix %>%
     as.matrix() %>%
     t()
-  
+
   x <- sweep(df, 2L, center)
   invcov <- MASS::ginv(cov(df))
-  
+
   value <- rowSums(x %*% invcov * x)
   pvalue <- pchisq(value, df = def, lower.tail = FALSE)
   matching <<- data.frame(diff = value,
                           pvalue = pvalue) %>%
     arrange(desc(pvalue)) %>%
     rownames_to_column("id")
-  
+
   return(matching)
 }
 
 
 
-## 0.7 singletime_n {{{---------------------------------------------------------
-#' Title
+## 0.7 single_df {{{---------------------------------------------------------
+#' Title Single time point matching with only matching time (replaced with the singletime_n)
 #'
-#' @param Dmatrix
-#' @param match_time
+#' @param Dmatrix A distance matrix
+#' @param match_time The matching anchor time as setup
+#' @param center The original geographical center
 #'
-#' @return
+#' @return A distance list arranged from smallest to largest
 #' @export
 #'
 #' @examples
@@ -235,13 +187,57 @@ single_df <- function(Dmatrix,
     mutate(diff = diff - as.numeric(center)) %>%
     rownames_to_column("id") %>%
     arrange(abs(diff))
-  
+
+  return(matching)
+}
+
+## 0.7 singletime_n {{{---------------------------------------------------------
+#' Title Single time point matching with both matching time and matching number
+#'
+#' @param Dmatrix
+#' @param match_time
+#' @param match_num
+#'
+#' @return
+#' @export
+#'
+#' @examples
+singletime_n <- function(Dmatrix,
+                         match_time,
+                         match_num) {
+  matching <<- Dmatrix %>%
+    filter(as.numeric(rownames(.)) == match_time) %>%
+    t() %>%
+    ## using Frobenius norm
+    # apply(lb_sub, 2, norm, type = "f") %>%
+    as.data.frame() %>%
+    dplyr::select(diff = 1) %>%
+    rownames_to_column("id") %>%
+    arrange(abs(diff)) %>%
+    slice(1:match_num)
+
   return(matching)
 }
 
 
+## 0.9 euclidean_n -----------------
+euclidean_n <- function(Dmatrix,
+                        match_num) {
+  matching <<- Dmatrix %>%
+    apply(2, norm, type = "2") %>%
+    ## using Frobenius norm
+    # apply(lb_sub, 2, norm, type = "f") %>%
+    as.data.frame() %>%
+    dplyr::select(diff = 1) %>%
+    rownames_to_column("id") %>%
+    arrange(diff) %>%
+    slice(1:match_num)
 
-## 0.8 mahalanobis p ------------------
+  return(matching)
+}
+
+
+## 0.10 mahalanobis p ------------------
 mahalanobis_p <- function(Dmatrix,
                           alpha) {
   def <- nrow(Dmatrix)
@@ -259,13 +255,13 @@ mahalanobis_p <- function(Dmatrix,
     rownames_to_column("id") %>%
     as.data.frame() %>%
     dplyr::filter(pvalue >= alpha)
-  
+
   # slice(1:match_num) %>%
   # inner_join(obs_data, by = "id")
   return(matching)
 }
 
-## 0.9 mahalanobis_n ---------------
+## 0.11 mahalanobis_n ---------------
 mahalanobis_n <- function(Dmatrix,
                           match_num) {
   def <- nrow(Dmatrix)
@@ -275,7 +271,7 @@ mahalanobis_n <- function(Dmatrix,
   x <- sweep(df, 2L, 0)
   invcov <- MASS::ginv(cov(df))
   value <- rowSums(x %*% invcov * x)
-  
+
   matching <<- Dmatrix %>%
     t() %>%
     as.data.frame() %>%
@@ -284,7 +280,7 @@ mahalanobis_n <- function(Dmatrix,
     dplyr::select(diff = 1) %>%
     rownames_to_column("id") %>%
     slice(1:match_num)
-  
+
   return(matching)
 }
 

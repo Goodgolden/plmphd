@@ -1,3 +1,4 @@
+## 3.1 plm_single --------------------------------------------------------------
 #' Title Original People-Like-Me for Single-time Matching
 #'
 #' @param train_data The training dataset for brokenstick model and linear model fitting; This training dataset also serves as the pool for matching process.
@@ -152,7 +153,7 @@ plm_single <- function(train_data,
 }
 
 
-
+## 3.2 people-like-me ---------------------------------------------------------
 #' Title People-Like-Me methods for single testing individual
 #'
 #' @param train_data
@@ -301,7 +302,7 @@ people_like_me <- function(train_data,
   return(results)
 }
 
-
+## 3.3 people-like-us ----------------------------------------------------------
 #' Title People-Like-Me methods for multiple testing dataset individuals
 #'
 #' @param train_data The training dataset for brokenstick model and linear model fitting; This training dataset also serves as the pool for matching process.

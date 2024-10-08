@@ -1,0 +1,363 @@
+---
+title: "Practice time1 anchor4 p95"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warnings = FALSE,
+                      message = FALSE,
+                      comment = "#>",
+                      #results = "hide",
+                      digits = 4,
+                      error = FALSE)
+
+## clean the R environment
+# graphics.off()
+# rm(list = ls())
+# freshr::freshr()
+
+## load packages
+library(here, quietly = TRUE)
+library(lme4, quietly = TRUE)
+library(devtools, quietly = TRUE)
+library(optimx, quietly = TRUE)
+
+devtools::load_all()
+## check the directory for the file
+# here::dr_here()
+# here::set_here()
+
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+```
+
+
+## Dynamic prediction Overall
+
+```{r}
+load("~/Desktop/plmphd/R/train_test.rda")
+train1 <- train %>%
+  group_by(id) %>%
+  summarise(ht0 = min(ht),
+            age0 = min(age))
+
+train2 <- full_join(train, train1, by = "id") %>%
+  mutate(sid = "S") %>%
+  unite(id, sid, id, sep = "") %>% 
+  mutate(sex = as.factor(sex))
+
+test1 <- test %>%
+  group_by(id) %>%
+  summarise(ht0 = min(ht),
+            age0 = min(age))
+
+test2 <- full_join(test, test1, by = "id") %>%
+  mutate(sid = "S") %>%
+  unite(id, sid, id, sep = "") %>% 
+  mutate(sex = as.factor(sex))
+```
+
+
+## Step1 Brokenstick
+
+Here is the setups
+
+```{r}
+#| include: TRUE
+bsk_knots <- c(3, 6, 9, 12, 14)
+anchor <- c(4, 6, 8, 10, 12)
+mhl_p <- 0.95
+
+folder <- paste0("figures/bks", length(bsk_knots), "_anchor4_p095_time1/")
+folder
+```
+
+
+```{r}
+# ctl <- .makeCC("warning", tol = 1e-3)
+bks_lmer1 <- lmer(ht ~ 1 + bs(time, knots = c(3, 6, 9, 12, 14), degree = 1) * sex + 
+                   (1 + bs(time, knots = c(3, 6, 9, 12, 14), degree = 1) * sex| id),
+                 # na.action = na.exclude,
+                 control = lmerControl(check.nobs.vs.nRE = "warning",
+                                         optCtrl = list(method = 'nlminb'),
+                                         optimizer = "optimx"),
+                 data = train2)
+
+summary(bks_lmer1)
+summary(rePCA(bks_lmer1))
+
+save(bks_lmer1, file = paste0(folder, "P04_brokenstick_lmer1.Rdata"))
+```
+
+## Step2 dynamic prediction 
+
+### Step2.1 Testing dynamic prediction
+
+```{r}
+test_baseline <- test2 %>%
+  group_by(id) %>%
+  mutate(group_index = row_number()) %>% 
+  filter(time <= 1)
+
+test_baseline %>% group_by(id) %>% summarize(n = n())
+
+lp_test <- IndvPred_lmer(lmerObject = bks_lmer1,
+                          data = train2,
+                          newdata = test_baseline,
+                          timeVar = "time",
+                          outcomeVar = "ht",
+                          idVar = "id",
+                          lmer.fixed = "1 + bs(time, knots = c(3, 6, 9, 12, 14), degree = 1) * sex",
+                          lmer.random = "1 + bs(time, knots = c(3, 6, 9, 12, 14), degree = 1) * sex",
+                          M = 500,
+                          times = anchor,
+                          all_times = TRUE,
+                          return_data = FALSE,
+                          level = 0.9,
+                          interval = "prediction",
+                          seed = 555)
+```
+
+
+```{r}
+#| eval: false
+#| fig-width: 50
+#| fig-height: 60
+
+lp_test <- lp_test %>%
+  as.data.frame() %>%
+  mutate(ht = as.numeric(predicted_y),
+         ht = round(ht, 2))
+plot2 <- ggplot() +
+  # geom_line(data = data1,
+  #           aes(x = as.numeric(time), 
+  #               y = ht, 
+  #               group = id),
+  #           color = "indianred") +
+  # geom_point(data = data1,
+  #            aes(x = as.numeric(time), 
+  #               y = ht, 
+  #               group = id)) +
+  geom_line(data = lp_test,
+            aes(x = as.numeric(time), 
+                y = ht, 
+                group = id),
+            color = "darkgreen",
+            alpha = 0.3) +
+  geom_point(data = lp_test,
+             aes(x = as.numeric(time), 
+                y = ht, 
+                group = id)) +
+  geom_line(data = test2,
+            aes(x = time,
+                y = ht,
+                group = id),
+            color = "grey") +
+  facet_wrap(~id, ncol = 30) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(title = "Individual Trajectories",
+       x = "Time",
+       y = "Outcome Score")
+
+plot2
+
+ggsave(paste0(folder, "P01_dynamic_predict_trajectories.png"),
+       plot2,
+       width = 45,
+       height = 45,
+       units = "in",
+       dpi = 300)
+
+```
+
+### Step2.2 Training Tricky conditional prediction 
+
+This part is very tricky.
+Somehow I cannot directly predict the conditional prediction for the training data 
+at the **anchor time sets**.
+
+```{r}
+#| eval: false
+#| fig-wideth: 40
+#| fig-height: 60
+
+train3 <- train2 %>% 
+  group_by(id) %>%
+  slice(1L) %>% 
+  dplyr::select(-time) %>%
+  ungroup()
+
+names(train2); names(train3)
+
+# anchor <- eval(parse(text = anchor))
+lb_train0 <- expand.grid(time = anchor,
+                        id = train3$id)
+lb_train1 <- lb_train0 %>% 
+  as.data.frame() %>%
+  full_join(train3, by = c("id"))
+
+lb_train2 <- lb_train0 %>%  
+  cbind(bs(lb_train0$time, 
+           knots = c(3, 6, 9, 12), 
+           degree = 1)) %>%
+  as.data.frame()
+
+lb_train3 <- lb_train2 %>% 
+  full_join(train3, by = c("id")) %>% 
+  mutate(`1:sexM` = `1` * ifelse(sex == "M", 1, 0),
+         `2:sexM` = `2` * ifelse(sex == "M", 1, 0),
+         `3:sexM` = `3` * ifelse(sex == "M", 1, 0),
+         `4:sexM` = `4` * ifelse(sex == "M", 1, 0),
+         `5:sexM` = `5` * ifelse(sex == "M", 1, 0)) %>%
+  mutate(intercept = 1,
+         sex = ifelse(sex == "M", 1, 0)) %>%
+  dplyr::select(intercept, `1`:`5`, sex ,`1:sexM`:`5:sexM`) %>%
+  mutate_all(as.numeric) %>%
+  as.matrix()
+
+
+re <- ranef(bks_lmer)[["id"]] %>% as.data.frame() %>%
+  slice(rep(1:n(), each = 3))
+
+dim(re) # 913 12
+dim(lb_train) # 2739 12
+A <- rowSums(lb_train * re)
+lb_train1$pred <- predict(bks_lmer1,
+                          ## marginal mean from the model
+                          re.form = NA,
+                          newdata = lb_train1) + A ## A is the random effect
+
+## This code does not work
+# lb_train$pred <- predict(bks_lmer1,
+#                          re.form = NULL,
+#                          ## re.form = "1 + bs(time, 
+#                          ##            knots = c(3, 6, 9, 12, 14), 
+#                          ##            degree = 1) * sex"
+#                          newdata = lb_train)
+lp_train <- train2 %>%
+  mutate(pred = predict(bks_lmer1,
+                        type = "response"))
+
+plot2.5 <- ggplot() +
+  geom_line(data = lp_train,
+            aes(x = as.numeric(as.character(time)),
+                y = ht,
+                group = id),
+            color = "black",
+            alpha = 0.4) +
+  geom_point(data = lp_train,
+             aes(x = as.numeric(as.character(time)),
+                y = ht,
+                group = id),
+             alpha = 0.5) +
+  geom_point(data = lb_train,
+            aes(x = as.numeric(as.character(time)), 
+                y = pred, 
+                group = id),
+            color = "indianred") +
+  facet_wrap(~id, ncol = 30) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(title = "Training Individual Trajectories",
+       x = "Time",
+       y = "Outcome Score")
+
+plot2.5
+ggsave(paste0(folder, "P01_brokenstick_dynamic_comparison.png"), 
+       plot2.5, 
+       width = 30,  
+       height = 45, 
+       units = "in", 
+       dpi = 300) 
+```
+
+## Step3 Matching
+
+This part is working surprisingly well.
+
+When you think about the dynamic prediction! 
+We only use observations before time2, extra pieces of B-spline cannot be
+even conditional estimated for the prediction.
+
+```{r}
+#| eval: false
+
+data2 <- lp_test %>%
+  ungroup() %>%
+  dplyr::select(id, time, ht) %>% 
+  mutate(time = as.numeric(as.character(time)))
+
+data1 <- lb_train1 %>% 
+  ungroup() %>% 
+  dplyr::select(id, time, ht = pred) %>% 
+  mutate(time = as.numeric(as.character(time)))
+
+subset <- data2 %>%
+    group_by(id) %>%
+    group_map(~ dis_match(lb_train = data1,
+                          lb_test_ind = .,
+                          train = train2,
+                          match_methods = "euclidean",
+                          id_var = id,
+                          outcome_var = ht,
+                          time_var = time,
+                          match_number = 50,
+                          match_time = FALSE,
+                          match_plot = TRUE),
+              .progress = TRUE)
+
+plots <- map(subset, "plot")
+
+library(gridExtra)
+ggsave(paste0(folder, "P03_matching_subset_plot_eld50.png"), 
+       marrangeGrob(grobs = plots,
+                    ncol = 20, nrow = 23),
+       width = 30,  
+       height = 31, 
+       units = "in", 
+       dpi = 300)
+
+```
+
+## Step4 Final prediction
+
+But the prediction is suprisingly well performed!
+
+```{r}
+#| eval: false
+gf <- "ht ~ cs(time, df = 3)"
+gs <- "~ cs(time, df = 1)"
+results <- test2 %>%
+  group_by(id) %>%
+  group_map(~ as.data.frame(.)) %>% 
+  map2(subset, 
+       ~try(predict_gamlss(matching = .y$subset,
+                           test_one = .x,
+                           id_var = id,
+                           time_var = time,
+                           outcome_var = ht,
+                           tmin = 0,
+                           tmax = 20,
+                           gamlss_formula = gf,
+                           gamsigma_formula = gs,
+                           predict_plot = TRUE) %>% 
+              suppressMessages()),
+       .progress = TRUE)
+
+# subset %>% length() # 457
+save(results, subset,
+     file = paste0(folder, "P03_gamlss_subset_results_data_eld50.Rdata"))
+
+#| eval: false
+plots <- map(results, "predictive_centiles")
+
+library(gridExtra)
+
+ggsave(paste0(folder, "P03_final_predictive_plot_eld50.png"), 
+       marrangeGrob(grobs = plots, ncol = 20, nrow = 25),
+       width = 30, 
+       height = 45, 
+       dpi = 300)
+```

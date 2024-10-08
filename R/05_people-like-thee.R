@@ -1,3 +1,4 @@
+## 5.1 dynamic-people-like-me --------------------------------------------------
 #' Title People-Like-Me for Dynamic Prediction
 #'
 #' @param train_data
@@ -237,7 +238,7 @@ people_like_thee <- function(train_data,
 }
 
 
-
+## 5.2 weighted dynamic-people-like-me -----------------------------------------
 
 
 
