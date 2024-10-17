@@ -15,6 +15,5 @@
 #' }
 #'
 #' @source \url{}
-#'
-"test0"
-"train0"
+"train"
+"test"

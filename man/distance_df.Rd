@@ -16,8 +16,29 @@ distance_df(
 )
 }
 \arguments{
+\item{lb_train}{the prediction/imputations from the two stage models (brokenstick model and linear model) dataset for the training data}
+
+\item{lb_test_ind}{the prediction/imputations from the two stage models (brokenstick model and linear model) dataset for the testing data, this is the prediction from the test individual}
+
+\item{match_methods}{the distance calculation methods, either "euclidean", "mahalanobis", or "single"}
+
+\item{match_time}{the critical time point for single-time matching, the time must be included in the anchor time set; do not need to specify the time for "euclidean" and "mahalanobis" methods}
+
+\item{id_var}{the id variable in the dataset}
+
+\item{outcome_var}{the outcome variable in the dataset}
+
+\item{time_var}{the time variable in the dataset}
+
 \item{...}{}
+}
+\value{
+a distance dataframe with the distance and p-value arranged
+from smallest to largest
 }
 \description{
 Title Distance calculation
+}
+\examples{
+\dontrun{}
 }

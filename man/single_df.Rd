@@ -2,13 +2,23 @@
 % Please edit documentation in R/00_utils.R
 \name{single_df}
 \alias{single_df}
-\title{Title}
+\title{Title Single time point matching with only matching time (replaced with the singletime_n)}
 \usage{
 single_df(Dmatrix, match_time, center)
 }
 \arguments{
-\item{match_time}{}
+\item{Dmatrix}{A distance matrix}
+
+\item{match_time}{The matching anchor time as setup}
+
+\item{center}{The original geographical center}
+}
+\value{
+A distance list arranged from smallest to largest
 }
 \description{
-Title
+Calculate the distance of a single time point
+}
+\examples{
+\dontrun {}
 }

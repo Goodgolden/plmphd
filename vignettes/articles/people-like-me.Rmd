@@ -11,4 +11,6 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(plmphd)
+library(devtools)
+library(testthat)
 ```

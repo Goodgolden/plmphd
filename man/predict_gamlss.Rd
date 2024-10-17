@@ -19,8 +19,30 @@ predict_gamlss(
 )
 }
 \arguments{
-\item{predict_plot}{}
+\item{matching}{the matching dataset for the subset from the original dataset}
+
+\item{test_one}{the target individual data for prediction}
+
+\item{id_var}{the id variable in the dataset}
+
+\item{time_var}{the time variable in the dataset}
+
+\item{outcome_var}{the outcome variable in the dataset}
+
+\item{gamlss_formula}{the formula for the GAMLSS model mean function part}
+
+\item{gamsigma_formula}{the formula for the GAMLSS model sigma function part}
+
+\item{weight}{the weighted regression inputs for the GAMLSS model}
+
+\item{predict_plot}{whether you want to include the plot for the prediction}
+}
+\value{
+a list of observed centiles, predicted centiles, and the plot if the \code{predict_plot} argument is TRUE
 }
 \description{
 Title Prediction with GAMLSS model
+}
+\examples{
+\dontrun{}
 }

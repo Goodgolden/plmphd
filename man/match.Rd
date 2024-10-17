@@ -17,8 +17,30 @@ match(
 )
 }
 \arguments{
-\item{match_plot}{}
+\item{distance_df}{the distance dataframe from the \code{distance_df()} function contains the distance and p-value noramlly will be arranged from smallest to largest}
+
+\item{train}{the training dataset because we need to subset the training dataset to get the matched individuals}
+
+\item{test_one}{the testing individual data}
+
+\item{id_var}{the id variable in the dataset}
+
+\item{outcome_var}{the outcome variable in the dataset}
+
+\item{time_var}{the time variable in the dataset}
+
+\item{match_alpha}{the p-value threshold for the matching (specifically for the Mahalanobis distance matching PLM)}
+
+\item{match_number}{the number of matches you want to get from the distance dataframe (specifically for the Euclidean and Mahalanobis distance matching PLM)}
+
+\item{match_plot}{whether you want to plot the matching individual trajectories}
+}
+\value{
+a list with the matching subset, the plot of the matching individual trajectories, the id of the target individual, the alpha threshold for the Mahalanobis distance matching, and the number of matches for the Euclidean and Mahalanobis distance matching
 }
 \description{
 Title Finding the matches subset
+}
+\examples{
+\dontrun{}
 }

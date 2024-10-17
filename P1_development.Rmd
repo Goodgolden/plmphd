@@ -68,18 +68,8 @@ It’s a good idea to store the code that generates your individual internal dat
 # usethis::use_data_raw("tsa_train")
 # usethis::use_data_raw("tsa_test")
 
-tsa_test <- tsa_test %>%
-  mutate(baseline0 = baseline) %>%
-  dplyr::select(-baseline)
-# 
-tsa_train <- tsa_train %>%
-  mutate(baseline0 = baseline) %>%
-  dplyr::select(-baseline)
-
-usethis::use_data(tsa_base, tsa_outcome,
-                  tsa_pain, tsa_rom,
-                  tsa_train, tsa_test,
-                  internal = TRUE,
+usethis::use_data(train, test,
+                  internal = FALSE,
                   overwrite = TRUE)
 ```
 
@@ -129,7 +119,7 @@ use_test("01_impute")
 ## test_check
 
 ```{r}
-test_check("plm2024")
+test_check("plmphd")
 ```
 
 ## environment
@@ -174,6 +164,13 @@ load_all()
 library("covr")
 report()
 test()
+
+# Q: what is poisson process
+# A: a process in which events occur continuously and independently at a constant average rate.
+# Q: what is the difference between poisson and exponential
+# A: The Poisson distribution is the probability distribution of independent event occurrences in an interval. The exponential distribution is the probability distribution of the time between independent events.
+# 
+
 ```
 
 **Cmd + Shift + T (macOS)** for test

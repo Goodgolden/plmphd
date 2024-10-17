@@ -2,13 +2,22 @@
 % Please edit documentation in R/00_utils.R
 \name{mahalanobis_df}
 \alias{mahalanobis_df}
-\title{Title}
+\title{Title Mahalanobis distance for a matrix}
 \usage{
 mahalanobis_df(Dmatrix, center)
 }
 \arguments{
-\item{center}{}
+\item{Dmatrix}{A numeric data matrix}
+
+\item{center}{A numeric vector as the center of Mahalanobis distance}
+}
+\value{
+A distance list arranged from smallest to largest
 }
 \description{
-Title
+Calculate the Mahalanobis distance for
+a given data matrix with a certain center defined.
+}
+\examples{
+\dontrun {}
 }

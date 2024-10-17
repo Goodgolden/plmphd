@@ -2,7 +2,7 @@
 % Please edit documentation in R/01_impute.R
 \name{linear_impute}
 \alias{linear_impute}
-\title{Title Linear regression for people-like-me methods}
+\title{Title Second Stage Model Linear Regression at anchor time points}
 \usage{
 linear_impute(
   lm_formula,
@@ -16,8 +16,36 @@ linear_impute(
 )
 }
 \arguments{
-\item{...}{}
+\item{lm_formula}{the second stage model with a user defined linear regression formula,
+optional to include other time-invariant covariates and baseline outcome.}
+
+\item{data_impute}{the training data set for the linear regression model,
+which depends on the anchor time points}
+
+\item{data_test}{the testing data set for the linear regression model,
+which depends on the anchor time points}
+
+\item{id_var}{the id variable name must be included in the dataset}
+
+\item{outcome_var}{the outcome variable name must be included in the dataset}
+
+\item{time_var}{the time variable name must be included in the dataset}
+
+\item{anchor_time}{the anchor time set for imputation}
+
+\item{...}{Not used, but required for future extension}
+}
+\value{
+A list with the imputed values for the training data set and testing data set
 }
 \description{
-Title Linear regression for people-like-me methods
+The function is used to impute the missing values after the brokenstick model;
+the function will take the outcomes from the brokenstick model and impute the outcomes at the
+anchor time points using a linear regression model. We will include extra time-invariant covariates
+into the linear model and the baseline outcome (possibly with interaction terms).
+Currently this function is only called in the single time point matching \code{people_like_i()} function.
+}
+\examples{
+\dontrun {}
+
 }

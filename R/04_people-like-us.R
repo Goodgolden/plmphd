@@ -1,6 +1,6 @@
-## 3.1 plm_single --------------------------------------------------------------
+## 3.1 people_like_i --------------------------------------------------------------
 #' Title Original People-Like-Me for Single-time Matching
-#'
+#' @description The People-Like-Me fucntion is to predict the personalized centiles for the testing dataset based on the training dataset. The function will first fit the brokenstick model and linear model for the training dataset. Then, the function will predict the outcome for the testing dataset based on the linear model. The function will find the matches for the testing dataset based on the single time point prediction. The function will predict the centiles for the testing dataset based on the GAMLSS model and the plot if the `predict_plot` argument is TRUE. This function is the basic setup for the People-Like-Me method with single time point matching.
 #' @param train_data The training dataset for brokenstick model and linear model fitting; This training dataset also serves as the pool for matching process.
 #' @param test_data The testing dataset for the personalized prediction.
 #' @param outcome_var The outcome variable of interest.
@@ -16,12 +16,14 @@
 #' @param match_number The number of matches for the matching process, which can be NULL for no number of matches, or a numeric value for the number of matches.
 #' @param match_plot The logical value for the matching plot, which can be TRUE for the plot, FALSE for no plot.
 #' @param predict_plot The logical value for the prediction plot, which can be TRUE for the plot, FALSE for no plot.
-#' @param ...
-#' @return
+#' @param ... Other arguments for the function.
+#' @return A list of the predicted centiles, observed centiles, and the plot if the `predict_plot` argument is TRUE.
+#' @seealso [people_like_me()], [people_like_us()], [people_like_thee()]
 #' @export
 #' @examples
+#' \dontrun{}
 
-plm_single <- function(train_data,
+people_like_i <- function(train_data,
                        test_data,
                        outcome_var,
                        time_var,
@@ -155,29 +157,27 @@ plm_single <- function(train_data,
 
 ## 3.2 people-like-me ---------------------------------------------------------
 #' Title People-Like-Me methods for single testing individual
+#' @param train_data The training dataset for brokenstick model and linear model fitting; This training dataset also serves as the pool for matching process.
+#' @param test_data The testing dataset for the personalized prediction.
+#' @param outcome_var The outcome variable of interest.
+#' @param time_var The time variable of interest.
+#' @param id_var The id variable of interest.
+#' @param tmin The minimum time point for the prediction.
+#' @param tmax The maximum time point for the prediction.
+#' @param brokenstick_knots The knots for the brokenstick model, which does not need to be equal distanced.
+#' @param anchor_time The time point for the anchor time for the matching process.
+#' @param linear_formula The formula for the linear model.
+#' @param gamlss_formula The mean formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.
+#' @param gamlss_sigma The sigma formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.
+#' @param match_number The number of matches for the matching process, which can be NULL for no number of matches, or a numeric value for the number of matches.
+#' @param match_plot The logical value for the matching plot, which can be TRUE for the plot, FALSE for no plot.
+#' @param predict_plot The logical value for the prediction plot, which can be TRUE for the plot, FALSE for no plot.
+#' @param ... Other arguments for the function.
 #'
-#' @param train_data
-#' @param test_data
-#' @param outcome_var
-#' @param time_var
-#' @param id_var
-#' @param brokenstick_knots
-#' @param anchor_time
-#' @param linear_formula
-#' @param gamlss_formula
-#' @param gamlss_sigma
-#' @param match_methods
-#' @param weight
-#' @param match_alpha
-#' @param match_number
-#' @param match_plot
-#' @param predict_plot
-#' @param ...
-#'
-#' @return
+#' @return A list of the predicted centiles, observed centiles, and the plot if the `predict_plot` argument is TRUE.
 #' @export
 #'
-#' @examples
+#' @examples \dontrun{}
 people_like_me <- function(train_data,
                            test_data,
                            outcome_var,
@@ -324,7 +324,10 @@ people_like_me <- function(train_data,
 #' @param match_number The number of matches for the matching process, which can be NULL for no number of matches, or a numeric value for the number of matches.
 #' @param match_plot The logical value for the matching plot, which can be TRUE for the plot, FALSE for no plot.
 #' @param predict_plot The logical value for the prediction plot, which can be TRUE for the plot, FALSE for no plot.
-#' @param ...
+#' @param ... Other arguments for the function.
+#' @return A list of the predicted centiles, observed centiles, and the plot if the `predict_plot` argument is TRUE.
+#' @export
+#' @examples \dontrun{}
 
 people_like_us <- function(train_data,
                            test_data,

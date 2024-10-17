@@ -15,7 +15,21 @@ plm_ind_plot(
 )
 }
 \arguments{
-\item{title}{}
+\item{quantile}{the quantiles you want to plot out with the prediction}
+
+\item{observation}{the observation data from the original dataset}
+
+\item{title}{the title for the plots}
+
+\item{outcome_var}{the outcome variable in the dataset}
+
+\item{id_var}{the id variable in the dataset}
+
+\item{time_var}{the time variable in the dataset}
+}
+\value{
+a ggplot object the plot with target individual observational data
+and all the matches for the target predictions
 }
 \description{
 Title plot individual matching

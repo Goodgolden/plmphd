@@ -2,13 +2,16 @@
 % Please edit documentation in R/00_utils.R
 \name{not_all_na}
 \alias{not_all_na}
-\title{Title}
+\title{Title Checking there is not all NA}
 \usage{
 not_all_na(x)
 }
 \arguments{
-\item{x}{}
+\item{x}{the target dataset}
+}
+\value{
+a boolean result
 }
 \description{
-Title
+Title Checking there is not all NA
 }

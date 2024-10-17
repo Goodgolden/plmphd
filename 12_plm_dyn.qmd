@@ -1,0 +1,105 @@
+---
+title: "Dynamic Prediction PLM"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warnings = FALSE,
+                      message = FALSE,
+                      comment = "#>",
+                      #results = "hide",
+                      digits = 4,
+                      error = FALSE)
+
+## clean the R environment
+# graphics.off()
+# rm(list = ls())
+# freshr::freshr()
+
+## load packages
+library(here, quietly = TRUE)
+library(lme4, quietly = TRUE)
+library(devtools, quietly = TRUE)
+library(optimx, quietly = TRUE)
+
+devtools::load_all()
+## check the directory for the file
+# here::dr_here()
+# here::set_here()
+
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+```
+
+
+## Setup
+
+```{r}
+#| include: TRUE
+load("~/Desktop/plmphd/R/train_test.rda")
+bsk_knots <- c(3, 6, 9, 12, 14)
+anchor <- c(4, 8, 12)
+mhl_p <- 0.80
+# folder <- paste0("figures/bks", 
+#                   length(bsk_knots), 
+#                   "_anchor4_p095_time1/")
+```
+
+## Step1 Brokenstick
+
+```{r}
+# ctl <- .makeCC("warning", tol = 1e-3)
+bks_lmer1 <- lmer(ht ~ 1 + bs(time, knots = c(3, 9, 12, 14), degree = 1) * sex + 
+                   (1 + bs(time, knots = c(3, 9, 12, 14), degree = 1) * sex| id),
+                 # na.action = na.exclude,
+                 control = lmerControl(check.nobs.vs.nRE = "warning",
+                                         optCtrl = list(method = 'nlminb'),
+                                         optimizer = "optimx"),
+                 data = train)
+
+summary(rePCA(bks_lmer1))
+save(bks_lmer1, file = "P12_brokenstick_lmer1.Rdata")
+```
+
+```{r}
+test_baseline <- test %>%
+  group_by(id) %>%
+  mutate(group_index = row_number()) %>% 
+  filter(time <= 1)
+
+test_baseline %>% 
+  group_by(id) %>% 
+  summarize(n = n())
+
+lp_test <- IndvPred_lmer(lmerObject = bks_lmer1,
+                          data = train2,
+                          newdata = test_baseline,
+                          timeVar = "time",
+                          outcomeVar = "ht",
+                          idVar = "id",
+                          lmer.fixed = "1 + bs(time, knots = c(3, 6, 9, 12, 14), degree = 1) * sex",
+                          lmer.random = "1 + bs(time, knots = c(3, 6, 9, 12, 14), degree = 1) * sex",
+                          M = 500,
+                          times = anchor,
+                          all_times = TRUE,
+                          return_data = FALSE,
+                          level = 0.9,
+                          interval = "prediction",
+                          seed = 555) %>%
+  as.data.frame() %>%
+  mutate(ht = as.numeric(predicted_y),
+         ht = round(ht, 2))
+```
+
+
+
+
+
+
+
+
+
+
+
+

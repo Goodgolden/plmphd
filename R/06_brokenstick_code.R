@@ -375,17 +375,16 @@ new_brokenstick <- function(call = match.call(),
 #' and `summary()` functions. For `method = "lmer"` the list component named
 #' `"mod"` contains an object of class [lme4::merMod]. These model objects
 #' are omitted in light `brokenstick` objects.
-#' @return
-#'
-#' A object of class `brokenstick`.
-#'
-#' @examples
-#' \donttest{
-#' check stef van buuren's brokenstick package
-#' https://github.com/growthcharts/brokenstick/tree/master/R
-#'
-#' }
+#' @return A object of class `brokenstick`.
 #' @export
+#' @examples
+#' \dontrun{
+#'geocode("3817 Spruce St, Philadelphia, PA 19104")
+#'geocode("Philadelphia, PA")
+#'dat <- data.frame(value=runif(3),address=c("3817 Spruce St, Philadelphia, PA 19104","Philadelphia, PA","Neverneverland"))
+#'geocode(dat)
+#'}
+
 brokenstick <- function(formula,
                         data,
                         knots = NULL,
@@ -589,14 +588,11 @@ brokenstick_impl_lmer <- function(data, formula, control, na.action) {
 #' fatal errors with respect the number of parameters into warnings. Use
 #' `lmerControl(check.nobs.vs.nRE = "ignore")` to silence `lmer()`.
 #' @param \dots Forwards arguments to [control_kr()]
-#' @return For method `"kr"`, a list returned by [control_kr()].
+#' @return For method `"kr"`, a list returned by `control_kr()`.
 #'         For method `"lmer"`, an object of class `lmerControl`.
-#'         For other methods, `set_control()` returns `NULL`.
-#' @examples
-#' # defaults
-#' control <- set_control()
-#' control
+#'         For other methods, `set_control()` returns `NULL`.`
 #' @export
+#'
 set_control <- function(method = c("kr", "lmer"),
                         kr = control_kr(...),
                         lmer = lmerControl(check.nobs.vs.nRE = "warning"),

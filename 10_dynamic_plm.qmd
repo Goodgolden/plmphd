@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE,
 library(here, quietly = TRUE)
 library(lme4, quietly = TRUE)
 library(devtools, quietly = TRUE)
-library(optimx, quietly = TRUE)
+# library(optimx, quietly = TRUE)
 
 devtools::load_all()
 ## check the directory for the file
@@ -97,22 +97,6 @@ meanout <- function(dataset){
     unlist()
   return(result1)
 }
-
-summary_5.0 <- map(plt_5.0,  "centiles_observed") %>%
-  map_dfr(~try(meanout(.))) %>%
-  colMeans()
-summary_5.5 <- map(plt_5.5,  "centiles_observed") %>%
-  map_dfr(~try(meanout(.))) %>%
-  colMeans()
-summary_6.0 <- map(plt_6.0,  "centiles_observed") %>%
-  map_dfr(~try(meanout(.))) %>%
-  colMeans()
-summary_6.5 <- map(plt_6.5,  "centiles_observed") %>%
-  map_dfr(~try(meanout(.))) %>%
-  colMeans()
-
-rbind(summary_5.0, summary_5.5, 
-      summary_6.0, summary_6.5)
 ```
 
 

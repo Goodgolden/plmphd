@@ -48,7 +48,8 @@ numbers_only <- function(x) {!grepl("\\D", x)}
 ## package info ----------------------------------------------------------------
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage("\n Welcome to my package; this is a package
-                        developed for Randy Jin's MS thesis")
+                        developed for Randy Jin's PhD thesis
+                        and Scientific Reports paper. \n")
 }
 
 
@@ -73,7 +74,7 @@ numbers_only <- function(x) {!grepl("\\D", x)}
 #' Title L2 or other norms
 #'
 #' @param v any numeric vector
-#' @return
+#' @return the L2 norm of the vector
 norm2 <- function(v) {
   sqrt(sum(v^2))
 }
@@ -84,7 +85,7 @@ norm2 <- function(v) {
 ## 0.2 not all na {{{-----------------------------------------------------------
 #' Title Checking there is not all NA
 #' @param x the target dataset
-#' @return
+#' @return a boolean result
 not_all_na <- function(x) {
   any(!is.na(x))
 }
@@ -93,7 +94,7 @@ not_all_na <- function(x) {
 ## 0.3 not any na {{{-----------------------------------------------------------
 #' Title Checking there is any not NA
 #' @param x the target dataset
-#' @return
+#' @return a boolean result
 not_any_na <- function(x) {
   all(!is.na(x))
 }
@@ -108,7 +109,9 @@ not_any_na <- function(x) {
 ## 0.5 euclidean_df ----------------------------------------------------------
 #' Title: Calculate Euclidean distance for a matrix
 #'
-#' Calculates the Euclidean distance of a given data matrix,
+#' @description
+#' A short description...
+#'  Calculates the Euclidean distance of a given data matrix,
 #' at an arbitrary center.
 #'
 #' @param Dmatrix A numeric data matrix
@@ -118,7 +121,7 @@ not_any_na <- function(x) {
 #'         from the smallest to the largest difference
 #' @export
 #'
-#' @examples
+#' @examples \dontrun {}
 euclidean_df <- function(Dmatrix,
                          center) {
   matching <<- as.data.frame(Dmatrix - center) %>%
@@ -133,15 +136,17 @@ euclidean_df <- function(Dmatrix,
 
 
 ## 0.6 mahalanobis_df --------------------------------------------------------
-#' Title
+#' Title Mahalanobis distance for a matrix
+#' @description Calculate the Mahalanobis distance for
+#' a given data matrix with a certain center defined.
 #'
-#' @param Dmatrix
-#' @param center
+#' @param Dmatrix A numeric data matrix
+#' @param center A numeric vector as the center of Mahalanobis distance
 #'
-#' @return
+#' @return A distance list arranged from smallest to largest
 #' @export
 #'
-#' @examples
+#' @examples \dontrun {}
 mahalanobis_df <- function(Dmatrix,
                            center) {
 
@@ -168,6 +173,7 @@ mahalanobis_df <- function(Dmatrix,
 ## 0.7 single_df {{{---------------------------------------------------------
 #' Title Single time point matching with only matching time (replaced with the singletime_n)
 #'
+#' @description Calculate the distance of a single time point
 #' @param Dmatrix A distance matrix
 #' @param match_time The matching anchor time as setup
 #' @param center The original geographical center
@@ -175,7 +181,7 @@ mahalanobis_df <- function(Dmatrix,
 #' @return A distance list arranged from smallest to largest
 #' @export
 #'
-#' @examples
+#' @examples \dontrun {}
 single_df <- function(Dmatrix,
                       match_time,
                       center) {
@@ -193,15 +199,16 @@ single_df <- function(Dmatrix,
 
 ## 0.7 singletime_n {{{---------------------------------------------------------
 #' Title Single time point matching with both matching time and matching number
+#' @description Calculate the distance of a single time point
+#' with a given anchor time point and the matching number
+#' @param Dmatrix A distance matrix
+#' @param match_time The matching anchor time as setup
+#' @param match_num The number of matching $\kappa$ criteria
 #'
-#' @param Dmatrix
-#' @param match_time
-#' @param match_num
-#'
-#' @return
+#' @return A distance list arranged from smallest to largest
 #' @export
 #'
-#' @examples
+#' @examples \dontrun {}
 singletime_n <- function(Dmatrix,
                          match_time,
                          match_num) {
@@ -221,6 +228,16 @@ singletime_n <- function(Dmatrix,
 
 
 ## 0.9 euclidean_n -----------------
+#' Title Euclidean distance matching with $\kappa$ criteria
+#'
+#' @param Dmatrix the distance matrix for calculating Euclidan distance
+#' @param match_num the number of matching $\kappa$ criteria
+#'
+#' @return A subset of distance list arranged from smallest to largest
+#' @export
+#' @examples \dontrun {}
+#' # example code
+#'
 euclidean_n <- function(Dmatrix,
                         match_num) {
   matching <<- Dmatrix %>%
@@ -238,6 +255,15 @@ euclidean_n <- function(Dmatrix,
 
 
 ## 0.10 mahalanobis p ------------------
+#' Title Mahalanobis distance with p-value $\alpha$ criteria
+#'
+#' @param Dmatrix the distance matrix for calculating Mahalanobis distance
+#' @param alpha the p-value criteria
+#'
+#' @return A subset of Mahalanobis distance list arranged from smallest to largest
+#' @export
+#'
+#' @examples \dontrun {}
 mahalanobis_p <- function(Dmatrix,
                           alpha) {
   def <- nrow(Dmatrix)
@@ -262,6 +288,15 @@ mahalanobis_p <- function(Dmatrix,
 }
 
 ## 0.11 mahalanobis_n ---------------
+#' Title Mahalanobis distance with $\kappa$ criteria
+#'
+#' @param Dmatrix the distance matrix for calculating Mahalanobis distance
+#' @param match_num the number of matching $\kappa$ criteria
+#'
+#' @return A subset of Mahalanobis distance list arranged from smallest to largest
+#' @export
+#'
+#' @examples \dontrun {}
 mahalanobis_n <- function(Dmatrix,
                           match_num) {
   def <- nrow(Dmatrix)

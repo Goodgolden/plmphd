@@ -2,7 +2,7 @@
 % Please edit documentation in R/01_impute.R
 \name{impute_brokenstick}
 \alias{impute_brokenstick}
-\title{Title Imputation with \code{brokenstick::brokenstick()}}
+\title{Title First Stage model imputation with \code{brokenstick::brokenstick()} at anchor time points}
 \usage{
 impute_brokenstick(
   outcome_var,
@@ -31,10 +31,16 @@ data.frame object in long-format.}
 
 \item{...}{Not used, but required for future extension}
 }
+\value{
+A data frame with the imputed values
+}
 \description{
 The predictions from a broken stick model coincide with
 the group-conditional means of the random effects.
 This function takes the \code{data} with selected \code{outcome_var}, \code{time_var},
 and \code{id_var}. The user can calculate prediction (imputation) at
 given anchor \code{time} set.
+}
+\examples{
+\dontrun {}
 }

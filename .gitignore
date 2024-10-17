@@ -16,3 +16,6 @@ inst/doc
 /fonts/
 /img/
 /archive/
+/data/
+/data-raw/
+.rda

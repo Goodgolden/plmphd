@@ -1,28 +1,29 @@
 ## 5.1 dynamic-people-like-me --------------------------------------------------
 #' Title People-Like-Me for Dynamic Prediction
 #'
-#' @param train_data
-#' @param test_data
-#' @param new_data
-#' @param outcome_var
-#' @param time_var
-#' @param id_var
-#' @param tmin
-#' @param tmax
-#' @param brokenstick_knots
-#' @param anchor_time
-#' @param gamlss_formula
-#' @param gamlss_sigma
-#' @param match_methods
-#' @param weight
-#' @param match_alpha
-#' @param match_number
-#' @param match_plot
-#' @param predict_plot
-#' @param ...
+#' @param train_data the training dataset
+#' @param test_data the testing dataset
+#' @param new_data the new dataset for prediction
+#' @param outcome_var the outcome variable in the dataset
+#' @param time_var the time variable in the dataset
+#' @param id_var the id variable in the dataset
+#' @param tmin the minimum time for the prediction
+#' @param tmax the maximum time for the prediction
+#' @param brokenstick_knots the knots for the brokenstick model
+#' @param anchor_time the anchor time for the prediction
+#' @param gamlss_formula the formula for the GAMLSS model mean function part
+#' @param gamlss_sigma the formula for the GAMLSS model sigma function part
+#' @param match_methods the methods for matching the individuals
+#' @param weight the weighted regression inputs for the GAMLSS model
+#' @param match_alpha the alpha level for the matching
+#' @param match_number the number of matches for the matching
+#' @param match_plot whether you want to include the plot for the matching
+#' @param predict_plot whether you want to include the plot for the prediction
+#' @param ... other arguments
 #'
-#' @return
+#' @return a list of predicted values for the testing dataset with observational time, the predictive time, and the predicted values.
 #' @export
+#' @examples \dontrun{}
 people_like_thee <- function(train_data,
                             test_data,
                             new_data,

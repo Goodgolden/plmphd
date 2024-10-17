@@ -1,20 +1,20 @@
 ## 3.1 people like me prediction -----------------------------------------------
 #' Title Prediction with GAMLSS model
 #'
-#' @param matching
-#' @param test_one
-#' @param id_var
-#' @param time_var
-#' @param outcome_var
-#' @param gamlss_formula
-#' @param gamsigma_formula
-#' @param weight
-#' @param predict_plot
+#' @param matching the matching dataset for the subset from the original dataset
+#' @param test_one the target individual data for prediction
+#' @param id_var the id variable in the dataset
+#' @param time_var the time variable in the dataset
+#' @param outcome_var the outcome variable in the dataset
+#' @param gamlss_formula the formula for the GAMLSS model mean function part
+#' @param gamsigma_formula the formula for the GAMLSS model sigma function part
+#' @param weight the weighted regression inputs for the GAMLSS model
+#' @param predict_plot whether you want to include the plot for the prediction
 #'
-#' @return
+#' @return a list of observed centiles, predicted centiles, and the plot if the `predict_plot` argument is TRUE
 #' @export
 #'
-#' @examples
+#' @examples \dontrun{}
 predict_gamlss <- function(matching,
                            test_one,
                            id_var,
@@ -112,12 +112,17 @@ predict_gamlss <- function(matching,
 ## 3.2 individual people-like-me matching plot ---------------------------------
 #' Title plot individual matching
 #'
-#' @param quantile
-#' @param observation
-#' @param title
+#' @param quantile the quantiles you want to plot out with the prediction
+#' @param observation the observation data from the original dataset
+#' @param title the title for the plots
+#' @param outcome_var the outcome variable in the dataset
+#' @param id_var the id variable in the dataset
+#' @param time_var the time variable in the dataset
 #'
-#' @return
+#' @return a ggplot object the plot with target individual observational data
+#'  and all the matches for the target predictions
 #' @export
+#'
 plm_ind_plot <- function(quantile,
                          observation,
                          title = NULL,
@@ -159,10 +164,10 @@ plm_ind_plot <- function(quantile,
                 fill = "dodgerblue3", alpha = 0.8) +
     geom_line(data = quantile, aes(x = time, y = q50),
               color = "dodgerblue4", linetype = "dashed") +
-    geom_point(data = observation, 
-               aes(x = time, 
+    geom_point(data = observation,
+               aes(x = time,
                    y = outcome),
-               color = "black", 
+               color = "black",
                size = 1) +
     theme_bw() +
     xlab("Time") +

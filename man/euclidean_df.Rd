@@ -16,6 +16,10 @@ The Euclidean distance list order
 from the smallest to the largest difference
 }
 \description{
+A short description...
 Calculates the Euclidean distance of a given data matrix,
 at an arbitrary center.
+}
+\examples{
+\dontrun {}
 }

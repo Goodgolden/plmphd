@@ -3,19 +3,20 @@
 ## 2.1 distance_df -------------------------------------------------------------
 #' Title Distance calculation
 #'
-#' @param lb_train
-#' @param lb_test_ind
-#' @param match_methods
-#' @param match_time
-#' @param id_var
-#' @param outcome_var
-#' @param time_var
+#' @param lb_train the prediction/imputations from the two stage models (brokenstick model and linear model) dataset for the training data
+#' @param lb_test_ind the prediction/imputations from the two stage models (brokenstick model and linear model) dataset for the testing data, this is the prediction from the test individual
+#' @param match_methods the distance calculation methods, either "euclidean", "mahalanobis", or "single"
+#' @param match_time the critical time point for single-time matching, the time must be included in the anchor time set; do not need to specify the time for "euclidean" and "mahalanobis" methods
+#' @param id_var the id variable in the dataset
+#' @param outcome_var the outcome variable in the dataset
+#' @param time_var the time variable in the dataset
 #' @param ...
 #'
-#' @return
+#' @return a distance dataframe with the distance and p-value arranged
+#' from smallest to largest
 #' @export
 #'
-#' @examples
+#' @examples \dontrun{}
 distance_df <- function(lb_train,
                         lb_test_ind,
                         match_methods = c("euclidean", "mahalanobis", "single"),
@@ -67,20 +68,20 @@ distance_df <- function(lb_train,
 
 #' Title Finding the matches subset
 #'
-#' @param distance_df
-#' @param train
-#' @param test_one
-#' @param id_var
-#' @param outcome_var
-#' @param time_var
-#' @param match_alpha
-#' @param match_number
-#' @param match_plot
+#' @param distance_df the distance dataframe from the `distance_df()` function contains the distance and p-value noramlly will be arranged from smallest to largest
+#' @param train the training dataset because we need to subset the training dataset to get the matched individuals
+#' @param test_one the testing individual data
+#' @param id_var the id variable in the dataset
+#' @param outcome_var the outcome variable in the dataset
+#' @param time_var the time variable in the dataset
+#' @param match_alpha the p-value threshold for the matching (specifically for the Mahalanobis distance matching PLM)
+#' @param match_number the number of matches you want to get from the distance dataframe (specifically for the Euclidean and Mahalanobis distance matching PLM)
+#' @param match_plot whether you want to plot the matching individual trajectories
 #'
-#' @return
+#' @return a list with the matching subset, the plot of the matching individual trajectories, the id of the target individual, the alpha threshold for the Mahalanobis distance matching, and the number of matches for the Euclidean and Mahalanobis distance matching
 #' @export
 #'
-#' @examples
+#' @examples \dontrun{}
 match <- function(distance_df = ddd,
                   train = train,
                   test_one,
@@ -133,6 +134,26 @@ match <- function(distance_df = ddd,
               number = match_number))
 }
 
+#' Title The distance calculation function for the PLM
+#'
+#' @param lb_train the prediction/imputations from the two stage models (brokenstick model and linear model) dataset for the training data
+#' @param lb_test_ind the prediction/imputations from the two stage models (brokenstick model and linear model) dataset for the testing data, this is the prediction from the test individual
+#' @param train the training dataset because we need to subset the training dataset to get the matched individuals
+#' @param match_methods the distance calculation methods, either "euclidean", "mahalanobis", or "single"
+#' @param id_var the id variable in the dataset
+#' @param outcome_var the outcome variable in the dataset
+#' @param time_var the time variable in the dataset
+#' @param match_alpha the p-value threshold for the matching (specifically for the Mahalanobis distance matching PLM)
+#' @param match_number the number of matches you want to get from the distance dataframe (specifically for the Euclidean and Mahalanobis distance matching PLM)
+#' @param match_time the critical time point for single-time matching, the time must be included in the anchor time set; do not need to specify the time for "euclidean" and "mahalanobis" methods
+#' @param match_plot whether you want to plot the matching individual trajectories
+#' @param ... other arguments for the function
+#'
+#' @return a list with the matching subset, the plot of the matching individual trajectories, the id of the target individual, the alpha threshold for the Mahalanobis distance matching, and the number of matches for the Euclidean and Mahalanobis distance matching
+#' @export
+#'
+#' @examples \dontrun{}
+#'
 dis_match <- function(lb_train,
                       lb_test_ind,
                       train = train,
@@ -145,8 +166,6 @@ dis_match <- function(lb_train,
                       match_time = NULL,
                       match_plot,
                       ...) {
-
-
   outcome_var <- ensym(outcome_var)
   time_var <- ensym(time_var)
   id_var <- ensym(id_var)
@@ -230,7 +249,26 @@ dis_match <- function(lb_train,
 
 
 
-
+## 2.3 single_df --------------------------------------------------------------
+#' Title The dynamic matching function for the PLM
+#'
+#' @param lb_train the prediction/imputations from the two stage models (brokenstick model and linear model) dataset for the training data
+#' @param lb_test_ind the prediction/imputations from the two stage models (brokenstick model and linear model) dataset for the testing data, this is the prediction from the test individual
+#' @param train the training dataset because we need to subset the training dataset to get the matched individuals
+#' @param match_methods the distance calculation methods, either "euclidean", "mahalanobis", or "single"
+#' @param id_var the id variable in the dataset
+#' @param outcome_var the outcome variable in the dataset
+#' @param time_var the time variable in the dataset
+#' @param match_alpha the p-value threshold for the matching (specifically for the Mahalanobis distance matching PLM)
+#' @param match_number the number of matches you want to get from the distance dataframe (specifically for the Euclidean and Mahalanobis distance matching PLM)
+#' @param match_time the critical time point for single-time matching, the time must be included in the anchor time set; do not need to specify the time for "euclidean" and "mahalanobis" methods
+#' @param match_plot whether you want to plot the matching individual trajectories
+#' @param ... other arguments for the function
+#'
+#' @return a list with the matching subset, the plot of the matching individual trajectories, the id of the target individual, the alpha threshold for the Mahalanobis distance matching, and the number of matches for the Euclidean and Mahalanobis distance matching
+#' @export
+#'
+#' @examples \dontrun{}
 dyn_match <- function(lb_train,
                       lb_test_ind,
                       train = train,

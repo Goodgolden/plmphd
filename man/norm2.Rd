@@ -7,7 +7,10 @@
 norm2(v)
 }
 \arguments{
-\item{v}{}
+\item{v}{any numeric vector}
+}
+\value{
+the L2 norm of the vector
 }
 \description{
 Title L2 or other norms

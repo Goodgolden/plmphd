@@ -1,7 +1,7 @@
 # First level imputation -------------------------------------------------------
 
 ## 1.1 impute_brokenstick -----------------------------------------------------
-#' Title Imputation with `brokenstick::brokenstick()`
+#' Title First Stage model imputation with `brokenstick::brokenstick()` at anchor time points
 #' @description
 #' The predictions from a broken stick model coincide with
 #' the group-conditional means of the random effects.
@@ -19,7 +19,9 @@
 #' data.frame object in long-format.
 #' @param ... Not used, but required for future extension
 #'
-#' @return
+#' @return A data frame with the imputed values
+#' @export
+#' @examples \dontrun {}
 ## need to add the example and see how things going
 impute_brokenstick <- function(outcome_var,
                                time_var,
@@ -84,24 +86,31 @@ impute_brokenstick <- function(outcome_var,
 }
 
 # Second level imputation ------------------------------------------------------
-
 ## 1.2 linear_impute ----------------------------------------------------------
 
-#' Title Linear regression for people-like-me methods
+#' Title Second Stage Model Linear Regression at anchor time points
 #'
-#' @param lm_formula
-#' @param data_impute
-#' @param data_test
-#' @param id_var
-#' @param outcome_var
-#' @param time_var
-#' @param anchor_time
-#' @param ...
+#' @description The function is used to impute the missing values after the brokenstick model;
+#' the function will take the outcomes from the brokenstick model and impute the outcomes at the
+#' anchor time points using a linear regression model. We will include extra time-invariant covariates
+#' into the linear model and the baseline outcome (possibly with interaction terms).
+#' Currently this function is only called in the single time point matching `people_like_i()` function.
+#' @param lm_formula the second stage model with a user defined linear regression formula,
+#' optional to include other time-invariant covariates and baseline outcome.
+#' @param data_impute the training data set for the linear regression model,
+#' which depends on the anchor time points
+#' @param data_test the testing data set for the linear regression model,
+#' which depends on the anchor time points
+#' @param id_var the id variable name must be included in the dataset
+#' @param outcome_var the outcome variable name must be included in the dataset
+#' @param time_var the time variable name must be included in the dataset
+#' @param anchor_time the anchor time set for imputation
+#' @param ... Not used, but required for future extension
 #'
-#' @return
+#' @return A list with the imputed values for the training data set and testing data set
 #' @export
 #'
-#' @examples
+#' @examples \dontrun {}
 #'
 linear_impute <- function(lm_formula,
                           data_impute,
@@ -154,21 +163,31 @@ linear_impute <- function(lm_formula,
     }
 
 ## 1.3 multiple_impute --------------------------------------------------------
-#' Title
+#' Title Multiple Linear Regression imputation at anchor time points
+#' @description The function is used to impute the missing values after the brokenstick model;
+#' the function will take the outcomes from the brokenstick model and impute the outcomes at the
+#' anchor time points using multiple linear regressions model at each anchor time point.
+#' We will include extra time-invariant covariates. Different from `linear_impute()` function,
+#' Here we fit multiple linear regression models at each anchor time point independently,
+#' which grant more flexibility for the models.
+#' This function is mainly used in `people-like-me()` and `people-like-us()` function,
+#'  as an alternate to `linear_impute()`.
 #'
-#' @param lm_formula
-#' @param data_impute
-#' @param data_test
-#' @param id_var
-#' @param outcome_var
-#' @param time_var
-#' @param anchor_time
-#' @param ...
+#' @param lm_formula the second stage model with a user defined linear regression formula,
+#' it depends on the liner model type and anchor time points used.
+#' @param data_impute the design matrix for training data set for the linear regression model,
+#' @param data_test the design matrix for testing data set for the linear regression model,
+#' @param id_var the id variable name must be included in the dataset
+#' @param outcome_var the outcome variable name must be included in the dataset
+#' @param time_var the time variable name must be included in the dataset
+#' @param anchor_time the anchor time set for imputation
+#' @param ... Not used, but required for future extension
 #'
-#' @return
+#' @return A list with the imputed values for the training data set and testing data set,
+#' and the summarization for the linear models probably will be removed in the furture.
 #' @export
 #'
-#' @examples
+#' @examples \dontrun {}
 multiple_impute <- function(lm_formula,
                           data_impute,
                           data_test,
@@ -194,7 +213,9 @@ multiple_impute <- function(lm_formula,
   lp_train <- map_dfc(lm_bks, ~predict(.) %>%
                        cbind())
 
-  results <- list(testing = lp_test, training = lp_train, summary = lm_bks)
+  results <- list(testing = lp_test,
+                  training = lp_train,
+                  summary = lm_bks)
 
   return(results)
 }
