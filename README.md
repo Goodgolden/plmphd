@@ -6,11 +6,58 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of plmphd is to …
+The goal of `plmphd` is to provide a set of functions for a new method
+called **“People-Like-Me”** (**PLM**) that can be used to predict the
+longitudinal trajectories for the new target individual. The package is
+designed to be user-friendly and easy to use. The package is still under
+development, but it is already functional and can be used to analyze
+data. The difference between the `plmphd` package and other linear mixed
+model based methods is that the `plmphd` is designed based on curve
+matching and to predict a new out-of-sample target. As we know, the
+prediction of the longitudinal trajectory is a challenging task,
+particularly when the target individual is not in the training dataset.
+The `plmphd` package is designed to address this challenge by using the
+curve matching method, to find the matches who are most similar to the
+unknown target individual as a donor cohort, then to predict the
+longitudinal trajectory for the new target individual only based on the
+information from the donor cohort.
+
+An alternative prediction based on linear mixed model is discussed by
+Dr. Dimitris Rizopoulos with [dynamic
+predictions](https://stats.stackexchange.com/questions/367521/how-does-a-fitted-linear-mixed-effects-model-predict-longitudinal-output-for-a-n).
+Here we summarize the key points for the linear mixed model based
+prediction: For example, ${\hat{y}}_{oj}$ denotes the observed outcome
+data for the new patient $j$, then you can first obtain an estimate, say
+${\hat{b}}_j^{*}$ of his/her random effects from the posterior
+distribution $[b_j \mid {\hat{y}}_{oj}, \theta]$, where $\theta$ denotes
+the model parameters. For example, ${\hat{b}}_j^{*}$ is the mean of this
+posterior distribution. Given this estimate of his/her random effects,
+you calculate predictions using $x_j(t)\beta + z_j(t){\hat{b}}_j^{*}$,
+where $x_j(t)$ and $z_j(t)$ denote the design matrices for the fixed and
+random effects at the (future) time points of interest, and $\beta$
+denotes the fixed effects. Standard errors for these predictions can be
+obtained using a Monte Carlo scheme. For models fitted by `lme()` you
+can obtain these predictions using function `IndvPred_lme()` from
+package
+[JMbayes](https://cran.r-project.org/web/packages/JMbayes/index.html);
+also you can obtain the same type of individualized predictions using
+the `predict()` method for models fitted by the `mixed_model()` function
+of the [GLMMadaptive](https://drizopoulos.github.io/GLMMadaptive/)
+package.
+
+For the function `people-like-thee()` in `plmphd` package, it is
+designed to predict the longitudinal trajectories with dynamic
+prediction function adapted from Dr. Dimitris Rizopoulos function for
+`lme4::lmer()` (which can only `nlme::lme()` fuction). The function is
+designed to be user-friendly and easy to use.
+
+The `plmphd` package is still under development, but it is already
+functional and can be used to analyze data. Here we provide the basic
+exmaples and simulated dataset in the `plmphd` package.
 
 ## Installation
 
-You can install the development version of plmphd from
+You can install the development version of `plmphd` from
 [GitHub](https://github.com/) with:
 
 ``` r
@@ -22,138 +69,13 @@ devtools::install_github("Goodgolden/plmphd")
 
 This is a basic example which shows you how to solve a common problem:
 
-``` r
-library(plmphd)
-#> Loading required package: brokenstick
-#> Loading required package: optimx
-#> Loading required package: broom.mixed
-#> Loading required package: dplyr
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
-#> Loading required package: gamlss
-#> Loading required package: splines
-#> Loading required package: gamlss.data
-#> 
-#> Attaching package: 'gamlss.data'
-#> The following object is masked from 'package:datasets':
-#> 
-#>     sleep
-#> Loading required package: gamlss.dist
-#> Loading required package: nlme
-#> 
-#> Attaching package: 'nlme'
-#> The following object is masked from 'package:dplyr':
-#> 
-#>     collapse
-#> The following object is masked from 'package:optimx':
-#> 
-#>     coef<-
-#> Loading required package: parallel
-#>  **********   GAMLSS Version 5.4-22  **********
-#> For more on GAMLSS look at https://www.gamlss.com/
-#> Type gamlssNews() to see new features/changes/bug fixes.
-#> Loading required package: here
-#> here() starts at /Users/goodgolden5/Desktop/plmphd
-#> Loading required package: lme4
-#> Loading required package: Matrix
-#> 
-#> Attaching package: 'lme4'
-#> The following object is masked from 'package:gamlss':
-#> 
-#>     refit
-#> The following object is masked from 'package:nlme':
-#> 
-#>     lmList
-#> Loading required package: MASS
-#> 
-#> Attaching package: 'MASS'
-#> The following object is masked from 'package:dplyr':
-#> 
-#>     select
-#> Loading required package: matrixcalc
-#> Loading required package: plotly
-#> Loading required package: ggplot2
-#> 
-#> Attaching package: 'plotly'
-#> The following object is masked from 'package:ggplot2':
-#> 
-#>     last_plot
-#> The following object is masked from 'package:MASS':
-#> 
-#>     select
-#> The following object is masked from 'package:stats':
-#> 
-#>     filter
-#> The following object is masked from 'package:graphics':
-#> 
-#>     layout
-#> Loading required package: shiny
-#> Loading required package: tibble
-#> Loading required package: tidyr
-#> 
-#> Attaching package: 'tidyr'
-#> The following objects are masked from 'package:Matrix':
-#> 
-#>     expand, pack, unpack
-#> Loading required package: tidyverse
-#> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-#> ✔ forcats   1.0.0     ✔ readr     2.1.5
-#> ✔ lubridate 1.9.3     ✔ stringr   1.5.1
-#> ✔ purrr     1.0.2     
-#> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-#> ✖ nlme::collapse() masks dplyr::collapse()
-#> ✖ tidyr::expand()  masks Matrix::expand()
-#> ✖ plotly::filter() masks dplyr::filter(), stats::filter()
-#> ✖ dplyr::lag()     masks stats::lag()
-#> ✖ tidyr::pack()    masks Matrix::pack()
-#> ✖ plotly::select() masks MASS::select(), dplyr::select()
-#> ✖ tidyr::unpack()  masks Matrix::unpack()
-#> ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
-#> 
-#>  Welcome to my package; this is a package
-#>                         developed for Randy Jin's MS thesis
-#> 
-#> 
-#> Attaching package: 'plmphd'
-#> 
-#> 
-#> The following objects are masked from 'package:brokenstick':
-#> 
-#>     brokenstick, control_kr, set_control
-#> 
-#> 
-#> The following object is masked from 'package:base':
-#> 
-#>     match
-## basic example code
-```
-
 What is special about using `README.Rmd` instead of just `README.md`?
 You can include R chunks like so:
-
-``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
-```
 
 You’ll still need to render `README.Rmd` regularly, to keep `README.md`
 up-to-date. `devtools::build_readme()` is handy for this.
 
 You can also embed plots, for example:
-
-<img src="man/figures/README-pressure-1.png" width="100%" />
 
 In that case, don’t forget to commit and push the resulting figure
 files, so they display on GitHub and CRAN.

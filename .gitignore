@@ -9,7 +9,6 @@
 .here
 .gitignore
 .Rbuildignore
-inst/doc
 /_plm/
 /results/
 /figures/
