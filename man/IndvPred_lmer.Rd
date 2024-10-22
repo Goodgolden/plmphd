@@ -2,8 +2,7 @@
 % Please edit documentation in R/07_drizopoulos_code.R
 \name{IndvPred_lmer}
 \alias{IndvPred_lmer}
-\title{Title Individualized Predictions from Linear Mixed Models for \code{lme4::lmer()}
-(Adapted from Dimitris Rizopoulos)}
+\title{Individualized Predictions from Linear Mixed Models for \code{lme4::lmer()}}
 \usage{
 IndvPred_lmer(
   lmerObject,
@@ -25,65 +24,82 @@ IndvPred_lmer(
 )
 }
 \arguments{
-\item{lmerObject}{an object inheriting from function \code{lmer()},
-class must be \code{lmerMod}.}
+\item{lmerObject}{An object of class \code{lmerMod} resulting from \code{lmer()}.}
 
-\item{data}{a data frame in which to train the linear mixed model
-(need to be updated in the plm methods).}
+\item{data}{A data frame used to train the linear mixed model.}
 
-\item{newdata}{a data frame in which to look for variables with which to predict.}
+\item{newdata}{A data frame containing the variables for the new subjects
+for which predictions are needed.}
 
-\item{timeVar}{a character string indicating what type of intervals should be computed.}
+\item{timeVar}{A character string specifying the time variable in the data.}
 
-\item{times}{a numeric vector denoting the time points for which we wish to compute the
-subject-specific predictions after the last available measurement provided in
-\code{newdata}. Default is a sequence of 100 equally spaced time points
-from the smallest to the largest follow-up time of all subjects.}
+\item{outcomeVar}{A character string specifying the outcome variable.}
 
-\item{M}{numeric scalar denoting the number of Monte Carlo samples.}
+\item{idVar}{A character string specifying the ID variable representing individuals.}
 
-\item{interval}{a character string indicating what type of intervals should be computed.}
+\item{times}{A numeric vector specifying the time points for which
+subject-specific predictions should be calculated. Defaults to
+100 equally spaced time points.}
 
-\item{all_times}{logical; should predictions be calculated at all \code{times} or only
-at the ones that are after the last observed time of each subject.}
+\item{lmer.fixed}{The formula for the fixed effects part of the model.}
 
-\item{level}{a numeric scalar denoting the tolerance/confidence level.}
+\item{lmer.random}{The formula for the random effects part of the model.}
 
-\item{return_data}{logical; if \code{TRUE} the data frame supplied in
-\code{newdata} is returned augmented with the outputs of the function.}
+\item{M}{An integer specifying the number of Monte Carlo samples. Default is 200.}
 
-\item{seed}{numeric scalar, the random seed used to produce the results.}
+\item{interval}{A character string indicating the type of intervals to compute:
+either "confidence" or "prediction". Defaults to "confidence".}
+
+\item{all_times}{Logical; if \code{TRUE}, predictions are computed at all
+time points in \code{times}, otherwise only after the last observed time for each subject.}
+
+\item{level}{A numeric scalar specifying the confidence level for the prediction intervals. Default is 0.95.}
+
+\item{return_data}{Logical; if \code{TRUE}, the function returns the data frame supplied in
+\code{newdata} augmented with the predictions and intervals. If \code{FALSE},
+a list with predicted values and intervals is returned.}
+
+\item{seed}{An integer used to set the random seed for reproducibility. Default is 1.}
+
+\item{...}{Additional arguments passed to the function.}
 }
 \value{
-a data frame with the predicted values,
-lower and upper bounds of the prediction intervals.
-
-If \code{return_data = TRUE},
-a the data frame \code{newdata} with extra rows for the time points at
-which predictions were calculated, and extra columns with the predictions
-and the limits of the pointwise confidence intervals.
-
-If \code{return_data = FALSE}, a list with components
-\item{times_to_pred}{time points at which predictions were calculated.}
-\item{predicted_y}{the predictions.}
-\item{low}{the lower limits of the pointwise confidence intervals.}
-\item{upp}{the upper limits of the pointwise confidence intervals.}
+A data frame or list with the following components:
+\itemize{
+\item If \code{return_data = TRUE}, a data frame \code{newdata} with additional rows for
+the time points where predictions were made, and additional columns for the predicted values
+and confidence/prediction intervals.
+\item If \code{return_data = FALSE}, a list with:
+\item{times_to_pred}{Time points where predictions were made.}
+\item{predicted_y}{The predicted values at these time points.}
+\item{low}{The lower bounds of the prediction intervals.}
+\item{upp}{The upper bounds of the prediction intervals.}
+}
 }
 \description{
-Title Individualized Predictions from Linear Mixed Models for \code{lme4::lmer()}
-(Adapted from Dimitris Rizopoulos)
+This function provides subject-specific predictions from a fitted
+\code{lmerMod} object (created by \code{lme4::lmer()}). It calculates the predictions
+using Monte Carlo sampling, optionally generating prediction intervals,
+and offers flexibility for predicting at all specified time points or only
+after the last observed time for each subject.
+}
+\note{
+This function is adapted from the \code{IndvPred_lme()} function in the \code{JMbayes} package. Please see the \code{JMbayes} package for more details.
 }
 \examples{
-{
 \dontrun{
-# linear mixed model fit
- lmer <- lmer()
+  # Example with lmer:
+  library(lme4)
+  lmer_mod <- lmer(y ~ time + (1 | id), data = example_data)
 
- id2 <- IndvPred_lmer(lmer,
-                      newdata = subset(tsa_test1, id == 2),
-                      timeVar = "time",
-                      M = 1000,
-                      return_data = TRUE)
-  }
+  # Individualized prediction for subject with id = 2:
+  pred_result <- IndvPred_lmer(lmerObject = lmer_mod,
+                               data = example_data,
+                               newdata = subset(example_data, id == 2),
+                               timeVar = "time",
+                               outcomeVar = "y",
+                               idVar = "id",
+                               M = 1000,
+                               return_data = TRUE)
 }
 }

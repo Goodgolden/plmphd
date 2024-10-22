@@ -2,22 +2,26 @@
 % Please edit documentation in R/00_utils.R
 \name{mahalanobis_df}
 \alias{mahalanobis_df}
-\title{Title Mahalanobis distance for a matrix}
+\title{Calculate Mahalanobis Distance for a Matrix}
 \usage{
 mahalanobis_df(Dmatrix, center)
 }
 \arguments{
-\item{Dmatrix}{A numeric data matrix}
+\item{Dmatrix}{\code{matrix} A numeric data matrix where each column represents a data point.}
 
-\item{center}{A numeric vector as the center of Mahalanobis distance}
+\item{center}{\code{numeric} A numeric vector representing the center point from which the Mahalanobis distances are calculated.}
 }
 \value{
-A distance list arranged from smallest to largest
+A \code{data.frame} with two columns: \code{id}, which represents the column names of the data matrix, and \code{diff}, which contains the Mahalanobis distances. The rows are ordered by descending p-values.
 }
 \description{
-Calculate the Mahalanobis distance for
-a given data matrix with a certain center defined.
+This function calculates the Mahalanobis distance between each column of a given numeric data matrix and a specified center. The result is returned as a list of distances, arranged from smallest to largest based on p-values.
 }
 \examples{
-\dontrun {}
+\dontrun{
+  # Example usage
+  Dmatrix <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 2)
+  center <- c(1, 2)
+  mahalanobis_df(Dmatrix, center)
+}
 }

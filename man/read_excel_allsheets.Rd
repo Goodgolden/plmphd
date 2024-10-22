@@ -2,18 +2,27 @@
 % Please edit documentation in R/00_utils.R
 \name{read_excel_allsheets}
 \alias{read_excel_allsheets}
-\title{Title Read Multiple Sheets of Excel file}
+\title{Read Multiple Sheets from an Excel File}
 \usage{
 read_excel_allsheets(filename, tibble = FALSE)
 }
 \arguments{
-\item{filename}{the directory location of the excel file}
+\item{filename}{\code{character} The file path of the Excel file to read.}
 
-\item{tibble}{return the datasets in as.data.frame format}
+\item{tibble}{\code{logical} If \code{TRUE}, the sheets will be returned as tibbles (default behavior of \code{readxl}). If \code{FALSE}, the sheets will be converted to \code{data.frame}. Defaults to \code{FALSE}.}
 }
 \value{
-a list of data.frames
+A list of data frames (or tibbles), where each element corresponds to a sheet in the Excel file, with sheet names as the list names.
 }
 \description{
-Title Read Multiple Sheets of Excel file
+This function reads all sheets from an Excel file and returns them as a list of data frames or tibbles, depending on the format specified by the \code{tibble} argument.
+}
+\examples{
+\dontrun{
+  # Reading an Excel file and returning the sheets as data.frames
+  sheets <- read_excel_allsheets("path_to_file.xlsx", tibble = FALSE)
+
+  # Reading an Excel file and returning the sheets as tibbles
+  sheets <- read_excel_allsheets("path_to_file.xlsx", tibble = TRUE)
+}
 }

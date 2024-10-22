@@ -1,57 +1,66 @@
-## 11.1 right_rows -------------------------------------------------------------
-
 ## 11.2 IndvPred_lmer ----------------------------------------------------------
-#' Title Individualized Predictions from Linear Mixed Models for `lme4::lmer()`
-#' (Adapted from Dimitris Rizopoulos)
+#' Individualized Predictions from Linear Mixed Models for `lme4::lmer()`
 #'
-#' @param lmerObject an object inheriting from function \code{lmer()},
-#' class must be `lmerMod`.
-#' @param data a data frame in which to train the linear mixed model
-#'  (need to be updated in the plm methods).
-#' @param newdata a data frame in which to look for variables with which to predict.
-#' @param timeVar a character string indicating what type of intervals should be computed.
-#' @param times a numeric vector denoting the time points for which we wish to compute the
-#' subject-specific predictions after the last available measurement provided in
-#' \code{newdata}. Default is a sequence of 100 equally spaced time points
-#' from the smallest to the largest follow-up time of all subjects.
-#' @param M numeric scalar denoting the number of Monte Carlo samples.
-#' @param interval a character string indicating what type of intervals should be computed.
-#' @param all_times logical; should predictions be calculated at all \code{times} or only
-#' at the ones that are after the last observed time of each subject.
-#' @param level a numeric scalar denoting the tolerance/confidence level.
-#' @param return_data logical; if \code{TRUE} the data frame supplied in
-#' \code{newdata} is returned augmented with the outputs of the function.
-#' @param seed numeric scalar, the random seed used to produce the results.
+#' @description This function provides subject-specific predictions from a fitted
+#' `lmerMod` object (created by \code{lme4::lmer()}). It calculates the predictions
+#' using Monte Carlo sampling, optionally generating prediction intervals,
+#' and offers flexibility for predicting at all specified time points or only
+#' after the last observed time for each subject.
 #'
-#' @return a data frame with the predicted values,
-#' lower and upper bounds of the prediction intervals.
+#' @param lmerObject An object of class `lmerMod` resulting from \code{lmer()}.
+#' @param data A data frame used to train the linear mixed model.
+#' @param newdata A data frame containing the variables for the new subjects
+#' for which predictions are needed.
+#' @param timeVar A character string specifying the time variable in the data.
+#' @param outcomeVar A character string specifying the outcome variable.
+#' @param idVar A character string specifying the ID variable representing individuals.
+#' @param times A numeric vector specifying the time points for which
+#' subject-specific predictions should be calculated. Defaults to
+#' 100 equally spaced time points.
+#' @param lmer.fixed The formula for the fixed effects part of the model.
+#' @param lmer.random The formula for the random effects part of the model.
+#' @param M An integer specifying the number of Monte Carlo samples. Default is 200.
+#' @param interval A character string indicating the type of intervals to compute:
+#' either "confidence" or "prediction". Defaults to "confidence".
+#' @param all_times Logical; if \code{TRUE}, predictions are computed at all
+#' time points in \code{times}, otherwise only after the last observed time for each subject.
+#' @param level A numeric scalar specifying the confidence level for the prediction intervals. Default is 0.95.
+#' @param return_data Logical; if \code{TRUE}, the function returns the data frame supplied in
+#' \code{newdata} augmented with the predictions and intervals. If \code{FALSE},
+#' a list with predicted values and intervals is returned.
+#' @param seed An integer used to set the random seed for reproducibility. Default is 1.
+#' @param ... Additional arguments passed to the function.
 #'
-#' If \code{return_data = TRUE},
-#'  a the data frame \code{newdata} with extra rows for the time points at
-#'  which predictions were calculated, and extra columns with the predictions
-#'  and the limits of the pointwise confidence intervals.
-#'
-#'  If \code{return_data = FALSE}, a list with components
-#'  \item{times_to_pred}{time points at which predictions were calculated.}
-#'  \item{predicted_y}{the predictions.}
-#'  \item{low}{the lower limits of the pointwise confidence intervals.}
-#'  \item{upp}{the upper limits of the pointwise confidence intervals.}
-#'
+#' @return A data frame or list with the following components:
+#' \itemize{
+#'   \item If \code{return_data = TRUE}, a data frame \code{newdata} with additional rows for
+#'   the time points where predictions were made, and additional columns for the predicted values
+#'   and confidence/prediction intervals.
+#'   \item If \code{return_data = FALSE}, a list with:
+#'     \item{times_to_pred}{Time points where predictions were made.}
+#'     \item{predicted_y}{The predicted values at these time points.}
+#'     \item{low}{The lower bounds of the prediction intervals.}
+#'     \item{upp}{The upper bounds of the prediction intervals.}
+#' }
+#' @note This function is adapted from the \code{IndvPred_lme()} function in the \code{JMbayes} package. Please see the \code{JMbayes} package for more details.
 #' @export
 #'
-#' @examples {
+#' @examples
 #' \dontrun{
-#' # linear mixed model fit
-#'  lmer <- lmer()
+#'   # Example with lmer:
+#'   library(lme4)
+#'   lmer_mod <- lmer(y ~ time + (1 | id), data = example_data)
 #'
-#'  id2 <- IndvPred_lmer(lmer,
-#'                       newdata = subset(tsa_test1, id == 2),
-#'                       timeVar = "time",
-#'                       M = 1000,
-#'                       return_data = TRUE)
-#'   }
+#'   # Individualized prediction for subject with id = 2:
+#'   pred_result <- IndvPred_lmer(lmerObject = lmer_mod,
+#'                                data = example_data,
+#'                                newdata = subset(example_data, id == 2),
+#'                                timeVar = "time",
+#'                                outcomeVar = "y",
+#'                                idVar = "id",
+#'                                M = 1000,
+#'                                return_data = TRUE)
 #' }
-
 IndvPred_lmer <- function (lmerObject,
                            data,
                            newdata,

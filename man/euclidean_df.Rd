@@ -2,24 +2,26 @@
 % Please edit documentation in R/00_utils.R
 \name{euclidean_df}
 \alias{euclidean_df}
-\title{Title: Calculate Euclidean distance for a matrix}
+\title{Calculate Euclidean Distance for a Matrix}
 \usage{
 euclidean_df(Dmatrix, center)
 }
 \arguments{
-\item{Dmatrix}{A numeric data matrix}
+\item{Dmatrix}{\code{matrix} A numeric data matrix where each column represents a data point.}
 
-\item{center}{A numeric vector}
+\item{center}{\code{numeric} A numeric vector representing the center point from which the Euclidean distances are calculated.}
 }
 \value{
-The Euclidean distance list order
-from the smallest to the largest difference
+A \code{data.frame} with two columns: \code{id}, which represents the column names of the data matrix, and \code{diff}, which contains the Euclidean distances, ordered from smallest to largest.
 }
 \description{
-A short description...
-Calculates the Euclidean distance of a given data matrix,
-at an arbitrary center.
+This function calculates the Euclidean distance between each column in a given numeric data matrix and a specified center. The result is returned as a list of distances, ordered from smallest to largest difference.
 }
 \examples{
-\dontrun {}
+\dontrun{
+  # Example usage
+  Dmatrix <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 2)
+  center <- c(1, 2)
+  euclidean_df(Dmatrix, center)
+}
 }

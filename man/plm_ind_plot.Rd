@@ -2,7 +2,7 @@
 % Please edit documentation in R/03_prediction.R
 \name{plm_ind_plot}
 \alias{plm_ind_plot}
-\title{Title plot individual matching}
+\title{Plot Individual People-Like-Me Matching}
 \usage{
 plm_ind_plot(
   quantile,
@@ -15,22 +15,36 @@ plm_ind_plot(
 )
 }
 \arguments{
-\item{quantile}{the quantiles you want to plot out with the prediction}
+\item{quantile}{\code{data.frame} A dataset containing the predicted quantiles (e.g., q05, q10, q25, q50, q75, q90, q95) for the individual over time.}
 
-\item{observation}{the observation data from the original dataset}
+\item{observation}{\code{data.frame} The observational data for the individual from the original dataset.}
 
-\item{title}{the title for the plots}
+\item{title}{\code{character} The title for the plot. Defaults to \code{NULL}.}
 
-\item{outcome_var}{the outcome variable in the dataset}
+\item{outcome_var}{\code{character} The name of the outcome variable in the dataset.}
 
-\item{id_var}{the id variable in the dataset}
+\item{id_var}{\code{character} The name of the ID variable in the dataset.}
 
-\item{time_var}{the time variable in the dataset}
+\item{time_var}{\code{character} The name of the time variable in the dataset.}
+
+\item{...}{Other arguments passed to the function (optional).}
 }
 \value{
-a ggplot object the plot with target individual observational data
-and all the matches for the target predictions
+A \code{ggplot} object representing the plot with the individual's observational data and predicted quantiles.
 }
 \description{
-Title plot individual matching
+This function generates a plot for an individual's predicted quantiles over time, along with the observational data from the original dataset. It visualizes the range of predictions using quantile ribbons and lines, and overlays the individual's actual observations.
+}
+\details{
+The plot includes multiple quantile bands (5th-95th, 10th-90th, 25th-75th percentiles) represented by shaded ribbons, with dashed lines for key quantiles. The individual's observed data points are plotted on top of the quantile bands for easy comparison.
+}
+\examples{
+\dontrun{
+  plm_ind_plot(quantile = pred_quantiles,
+               observation = obs_data,
+               title = "Individual Prediction and Observations",
+               outcome_var = "height",
+               id_var = "id",
+               time_var = "age")
+}
 }

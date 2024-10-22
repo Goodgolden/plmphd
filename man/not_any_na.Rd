@@ -2,16 +2,27 @@
 % Please edit documentation in R/00_utils.R
 \name{not_any_na}
 \alias{not_any_na}
-\title{Title Checking there is any not NA}
+\title{Check if There Are No Missing Values (NA) in a Dataset}
 \usage{
 not_any_na(x)
 }
 \arguments{
-\item{x}{the target dataset}
+\item{x}{The target dataset (can be a vector, data frame, or matrix).}
 }
 \value{
-a boolean result
+\code{logical} A boolean result: \code{TRUE} if there are no missing values (NA) in the dataset, otherwise \code{FALSE}.
 }
 \description{
-Title Checking there is any not NA
+This function checks if a dataset (or vector) contains no missing values (NA). It returns \code{TRUE} if there are no NA values, and \code{FALSE} otherwise.
+}
+\examples{
+\dontrun{
+  # Check if a vector contains no missing values
+  not_any_na(c(1, 2, 3, NA))  # FALSE
+  not_any_na(c(1, 2, 3, 4))   # TRUE
+
+  # Check if a data frame contains no missing values
+  df <- data.frame(a = c(1, 2, NA), b = c(4, 5, 6))
+  not_any_na(df)  # FALSE
+}
 }

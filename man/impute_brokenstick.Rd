@@ -2,7 +2,7 @@
 % Please edit documentation in R/01_impute.R
 \name{impute_brokenstick}
 \alias{impute_brokenstick}
-\title{Title First Stage model imputation with \code{brokenstick::brokenstick()} at anchor time points}
+\title{First Stage Model Imputation with \code{brokenstick::brokenstick()} at Anchor Time Points}
 \usage{
 impute_brokenstick(
   outcome_var,
@@ -15,32 +15,66 @@ impute_brokenstick(
 )
 }
 \arguments{
-\item{outcome_var}{The outcome_var variable name must include in the dataset}
+\item{outcome_var}{\code{character}. The name of the outcome variable in the dataset.}
 
-\item{time_var}{The time variable name must be included in the dataset}
+\item{time_var}{\code{character}. The name of the time variable in the dataset.}
 
-\item{id_var}{The id variable name must be included in the dataset}
+\item{id_var}{\code{character}. The name of the ID variable in the dataset.}
 
-\item{bs_knots}{The internal knots for brokenstick model}
+\item{bs_knots}{\code{numeric vector}. The internal knots for the brokenstick model.}
 
-\item{anchor_time}{The anchor time set for imputation,}
+\item{anchor_time}{\code{numeric}. The anchor time point(s) for imputation.}
 
-\item{data}{A data frame in which to look for variables with which to fit
-the brokenstick model and predict. Ideally, this is a longitudinal
-data.frame object in long-format.}
+\item{data}{\code{data.frame}. A longitudinal dataset in long format, containing the specified variables.}
 
-\item{...}{Not used, but required for future extension}
+\item{...}{Not used, but required for future extension.}
 }
 \value{
-A data frame with the imputed values
+\code{data.frame}. A data frame with the imputed values at the anchor time points, baseline information, and the fitted model.
 }
 \description{
-The predictions from a broken stick model coincide with
-the group-conditional means of the random effects.
-This function takes the \code{data} with selected \code{outcome_var}, \code{time_var},
-and \code{id_var}. The user can calculate prediction (imputation) at
-given anchor \code{time} set.
+This function uses the \code{brokenstick::brokenstick()} model to impute values at specified anchor time points in a longitudinal dataset. The predictions from the broken stick model represent the group-conditional means of the random effects. The user can calculate prediction (imputation) at given anchor time points using specified outcome, time, and ID variables.
+}
+\details{
+The function fits the brokenstick model based on the provided outcome, time, and ID variables, and then predicts the outcome variable at the given anchor time points. The returned data frame contains the imputed values, the baseline outcome values, and the original dataset.
+The attributes of the returned data frame include:
+\describe{
+\item{\code{model}}{The fitted brokenstick model object.}
+\item{\code{prediction}}{The predicted values from the model at the anchor time points.}
+\item{\code{baseline}}{The baseline values for the outcome variable.}
+}
 }
 \examples{
-\dontrun {}
+\dontrun{
+# Example of using the function
+# Sample data preparation
+library(dplyr)
+data <- data.frame(
+  id = rep(1:10, each = 5),
+  time = rep(seq(0, 10, by = 2.5), 10),
+  outcome = rnorm(50)
+)
+
+# Define the parameters
+outcome_var <- "outcome"
+time_var <- "time"
+id_var <- "id"
+bs_knots <- c(2.5, 5, 7.5)
+anchor_time <- c(3, 6, 9)
+
+# Call the impute_brokenstick function
+result <- impute_brokenstick(
+  outcome_var = outcome_var,
+  time_var = time_var,
+  id_var = id_var,
+  bs_knots = bs_knots,
+  anchor_time = anchor_time,
+  data = data
+)
+
+# Inspect the result
+head(result)
+attr(result, "model")   # Access the fitted model
+attr(result, "baseline") # Access the baseline data
+}
 }

@@ -2,21 +2,26 @@
 % Please edit documentation in R/00_utils.R
 \name{mahalanobis_n}
 \alias{mahalanobis_n}
-\title{Title Mahalanobis distance with $\kappa$ criteria}
+\title{Mahalanobis Distance with \eqn{\kappa} Criteria}
 \usage{
 mahalanobis_n(Dmatrix, match_num)
 }
 \arguments{
-\item{Dmatrix}{the distance matrix for calculating Mahalanobis distance}
+\item{Dmatrix}{\code{matrix} A numeric distance matrix where columns represent data points.}
 
-\item{match_num}{the number of matching $\kappa$ criteria}
+\item{match_num}{\code{numeric} The number of closest matches (\eqn{\kappa}) to return based on the Mahalanobis distance.}
 }
 \value{
-A subset of Mahalanobis distance list arranged from smallest to largest
+A \code{data.frame} with two columns: \code{id}, representing the identifiers for each column in the matrix, and \code{diff}, which contains the calculated Mahalanobis distances, ordered from smallest to largest. The result is limited to the top \code{match_num} closest matches.
 }
 \description{
-Title Mahalanobis distance with $\kappa$ criteria
+This function calculates the Mahalanobis distance for each column in a given distance matrix and returns the top \code{match_num} closest matches based on the smallest Mahalanobis distances.
 }
 \examples{
-\dontrun {}
+\dontrun{
+  # Example usage
+  Dmatrix <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3)
+  match_num <- 2
+  mahalanobis_n(Dmatrix, match_num)
+}
 }

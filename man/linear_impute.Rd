@@ -2,7 +2,7 @@
 % Please edit documentation in R/01_impute.R
 \name{linear_impute}
 \alias{linear_impute}
-\title{Title Second Stage Model Linear Regression at anchor time points}
+\title{Second Stage Model Linear Regression at Anchor Time Points}
 \usage{
 linear_impute(
   lm_formula,
@@ -16,36 +16,66 @@ linear_impute(
 )
 }
 \arguments{
-\item{lm_formula}{the second stage model with a user defined linear regression formula,
-optional to include other time-invariant covariates and baseline outcome.}
+\item{lm_formula}{\code{formula}. A user-defined linear regression formula for the second-stage imputation. The formula can optionally include additional time-invariant covariates and baseline outcomes.}
 
-\item{data_impute}{the training data set for the linear regression model,
-which depends on the anchor time points}
+\item{data_impute}{\code{data.frame}. The training dataset used to fit the linear regression model, based on the anchor time points.}
 
-\item{data_test}{the testing data set for the linear regression model,
-which depends on the anchor time points}
+\item{data_test}{\code{data.frame}. The testing dataset for which missing values are imputed using the linear regression model.}
 
-\item{id_var}{the id variable name must be included in the dataset}
+\item{id_var}{\code{character}. The name of the ID variable in the dataset.}
 
-\item{outcome_var}{the outcome variable name must be included in the dataset}
+\item{outcome_var}{\code{character}. The name of the outcome variable in the dataset.}
 
-\item{time_var}{the time variable name must be included in the dataset}
+\item{time_var}{\code{character}. The name of the time variable in the dataset.}
 
-\item{anchor_time}{the anchor time set for imputation}
+\item{anchor_time}{\code{numeric}. The anchor time point(s) at which imputation is performed.}
 
-\item{...}{Not used, but required for future extension}
+\item{...}{Additional arguments, currently not used but included for future extensions.}
 }
 \value{
-A list with the imputed values for the training data set and testing data set
+A list containing:
+\describe{
+\item{\code{testing}}{\code{data.frame}. The testing dataset with imputed values at the anchor time points.}
+\item{\code{training}}{\code{data.frame}. The training dataset with imputed values at the anchor time points.}
+\item{\code{summary}}{\code{summary.lm}. A summary of the fitted linear regression model.}
+}
 }
 \description{
-The function is used to impute the missing values after the brokenstick model;
-the function will take the outcomes from the brokenstick model and impute the outcomes at the
-anchor time points using a linear regression model. We will include extra time-invariant covariates
-into the linear model and the baseline outcome (possibly with interaction terms).
-Currently this function is only called in the single time point matching \code{people_like_i()} function.
+This function performs a second-stage imputation using linear regression at anchor time points, after the first-stage imputation with the brokenstick model. It takes the imputed outcomes from the brokenstick model and performs imputation for missing values at anchor time points using a linear regression model. The model can include time-invariant covariates and baseline outcomes, possibly with interaction terms. This function is primarily called within the \code{people_like_i()} function for single time point matching.
 }
 \examples{
-\dontrun {}
+\dontrun{
+# Example usage
+# Prepare sample data
+data_impute <- data.frame(
+  id = rep(1:10, each = 5),
+  time = rep(seq(0, 10, by = 2.5), 10),
+  outcome = rnorm(50),
+  covariate = runif(50)
+)
+data_test <- data_impute
 
+# Define parameters
+lm_formula <- "outcome ~ time + covariate"
+id_var <- "id"
+outcome_var <- "outcome"
+time_var <- "time"
+anchor_time <- 5
+
+# Call the linear_impute function
+result <- linear_impute(
+  lm_formula = lm_formula,
+  data_impute = data_impute,
+  data_test = data_test,
+  id_var = id_var,
+  outcome_var = outcome_var,
+  time_var = time_var,
+  anchor_time = anchor_time
+)
+
+# Inspect the results
+head(result$testing)  # Testing dataset with imputed values
+head(result$training) # Training dataset with imputed values
+print(result$summary) # Summary of the linear regression model
+}
 }

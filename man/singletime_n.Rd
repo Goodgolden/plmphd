@@ -2,24 +2,29 @@
 % Please edit documentation in R/00_utils.R
 \name{singletime_n}
 \alias{singletime_n}
-\title{Title Single time point matching with both matching time and matching number}
+\title{Single Time Point Matching with a Specified Number of Matches}
 \usage{
 singletime_n(Dmatrix, match_time, match_num)
 }
 \arguments{
-\item{Dmatrix}{A distance matrix}
+\item{Dmatrix}{\code{matrix} A numeric distance matrix where rows represent time points.}
 
-\item{match_time}{The matching anchor time as setup}
+\item{match_time}{\code{numeric} The anchor time point for matching. This specifies which row (time point) to use for distance calculation.}
 
-\item{match_num}{The number of matching $\kappa$ criteria}
+\item{match_num}{\code{numeric} The number of closest matches to return.}
 }
 \value{
-A distance list arranged from smallest to largest
+A \code{data.frame} with two columns: \code{id}, representing the identifiers for each element, and \code{diff}, which contains the calculated distances, ordered from smallest to largest. The result is limited to the top \code{match_num} closest matches.
 }
 \description{
-Calculate the distance of a single time point
-with a given anchor time point and the matching number
+This function calculates the distance at a single time point from a given distance matrix, and returns the top \code{match_num} closest matches based on the absolute difference from the time point.
 }
 \examples{
-\dontrun {}
+\dontrun{
+  # Example usage
+  Dmatrix <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3)
+  match_time <- 2
+  match_num <- 2
+  singletime_n(Dmatrix, match_time, match_num)
+}
 }

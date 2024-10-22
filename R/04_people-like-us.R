@@ -1,27 +1,46 @@
 ## 3.1 people_like_i --------------------------------------------------------------
-#' Title Original People-Like-Me for Single-time Matching
-#' @description The People-Like-Me fucntion is to predict the personalized centiles for the testing dataset based on the training dataset. The function will first fit the brokenstick model and linear model for the training dataset. Then, the function will predict the outcome for the testing dataset based on the linear model. The function will find the matches for the testing dataset based on the single time point prediction. The function will predict the centiles for the testing dataset based on the GAMLSS model and the plot if the `predict_plot` argument is TRUE. This function is the basic setup for the People-Like-Me method with single time point matching.
-#' @param train_data The training dataset for brokenstick model and linear model fitting; This training dataset also serves as the pool for matching process.
-#' @param test_data The testing dataset for the personalized prediction.
-#' @param outcome_var The outcome variable of interest.
-#' @param time_var The time variable of interest.
-#' @param id_var The id variable of interest.
-#' @param tmin The minimum time point for the prediction.
-#' @param tmax The maximum time point for the prediction.
-#' @param brokenstick_knots The knots for the brokenstick model, which does not need to be equal distanced.
-#' @param anchor_time The time point for the anchor time for the matching process.
-#' @param linear_formula The formula for the linear model.
-#' @param gamlss_formula The mean formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.
-#' @param gamlss_sigma The sigma formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.
-#' @param match_number The number of matches for the matching process, which can be NULL for no number of matches, or a numeric value for the number of matches.
-#' @param match_plot The logical value for the matching plot, which can be TRUE for the plot, FALSE for no plot.
-#' @param predict_plot The logical value for the prediction plot, which can be TRUE for the plot, FALSE for no plot.
-#' @param ... Other arguments for the function.
-#' @return A list of the predicted centiles, observed centiles, and the plot if the `predict_plot` argument is TRUE.
-#' @seealso [people_like_me()], [people_like_us()], [people_like_thee()]
-#' @export
+#' People-Like-Me for Single-Time Point Matching for Single Individual
+#'
+#' @description This function, part of the People-Like-Me method, predicts personalized centiles for a testing dataset based on a training dataset. It first fits a brokenstick model and a linear model to the training data, then predicts outcomes for the test data using the linear model. Matches for the test dataset are determined based on single time point predictions. Finally, the function predicts centiles for the test dataset using a GAMLSS model, with optional plots if `predict_plot` is set to \code{TRUE}.
+#'
+#' @param train_data \code{data.frame} The training dataset for fitting the brokenstick and linear models. This dataset also serves as the pool for the matching process.
+#' @param test_data \code{data.frame} The testing dataset for personalized prediction.
+#' @param outcome_var \code{character} The name of the outcome variable of interest.
+#' @param time_var \code{character} The name of the time variable of interest.
+#' @param id_var \code{character} The name of the ID variable representing individuals.
+#' @param tmin \code{numeric} The minimum time point for the prediction.
+#' @param tmax \code{numeric} The maximum time point for the prediction.
+#' @param brokenstick_knots \code{numeric} A vector of knots for the brokenstick model, which do not need to be equally spaced.
+#' @param anchor_time \code{numeric} The specific time point used as the anchor for the matching process.
+#' @param linear_formula \code{formula} The formula used to fit the linear model.
+#' @param gamlss_formula \code{formula} The mean formula for the GAMLSS model, typically used for smoothing as a function of time.
+#' @param gamlss_sigma \code{formula} The sigma formula for the GAMLSS model, used for smoothing as a function of time.
+#' @param match_number \code{numeric} The number of matches to find during the matching process. Can be \code{NULL} or a numeric value.
+#' @param match_plot \code{logical} If \code{TRUE}, a plot of the matching process will be generated. Defaults to \code{TRUE}.
+#' @param predict_plot \code{logical} If \code{TRUE}, a plot of the prediction process will be generated. Defaults to \code{TRUE}.
+#' @param ... Other arguments passed to the function.
+#'
+#' @return A \code{list} containing the following attributes:
+#' \itemize{
+#'   \item \code{predicted_centiles}: A \code{data.frame} of predicted centiles for each individual in the test dataset.
+#'   \item \code{observed_centiles}: A \code{data.frame} of observed centiles for each individual in the test dataset.
+#'   \item \code{plots}: A \code{ggplot} object of the prediction plot, if \code{predict_plot = TRUE}.
+#'   \item \code{subset}: A list of matched individuals based on the single-time point matching process.
+#'   \item \code{linear}: The fitted linear model used to predict outcomes.
+#'   \item \code{brokenstick_model}: The fitted brokenstick model used for initial data imputation and prediction.
+#'   \item \code{matching_plot}: A plot object of the matching process, if \code{match_plot = TRUE}.
+#' }
+#'
+#' @seealso \code{\link{people_like_me}}, \code{\link{people_like_us}}, \code{\link{people_like_thee}}
+#'
 #' @examples
-#' \dontrun{}
+#' \dontrun{
+#'   # Example usage
+#'   results <- people_like_i(train_data, test_data, outcome_var = "height", time_var = "age", id_var = "id", ...)
+#' }
+#'
+#' @export
+
 
 people_like_i <- function(train_data,
                        test_data,
@@ -156,28 +175,49 @@ people_like_i <- function(train_data,
 
 
 ## 3.2 people-like-me ---------------------------------------------------------
-#' Title People-Like-Me methods for single testing individual
-#' @param train_data The training dataset for brokenstick model and linear model fitting; This training dataset also serves as the pool for matching process.
-#' @param test_data The testing dataset for the personalized prediction.
-#' @param outcome_var The outcome variable of interest.
-#' @param time_var The time variable of interest.
-#' @param id_var The id variable of interest.
-#' @param tmin The minimum time point for the prediction.
-#' @param tmax The maximum time point for the prediction.
-#' @param brokenstick_knots The knots for the brokenstick model, which does not need to be equal distanced.
-#' @param anchor_time The time point for the anchor time for the matching process.
-#' @param linear_formula The formula for the linear model.
-#' @param gamlss_formula The mean formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.
-#' @param gamlss_sigma The sigma formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.
-#' @param match_number The number of matches for the matching process, which can be NULL for no number of matches, or a numeric value for the number of matches.
-#' @param match_plot The logical value for the matching plot, which can be TRUE for the plot, FALSE for no plot.
-#' @param predict_plot The logical value for the prediction plot, which can be TRUE for the plot, FALSE for no plot.
-#' @param ... Other arguments for the function.
+#' People-Like-Me Methods for Single Testing Individual
 #'
-#' @return A list of the predicted centiles, observed centiles, and the plot if the `predict_plot` argument is TRUE.
+#' @description This function is part of the People-Like-Me method and is designed for personalized prediction of centiles for a single individual in the testing dataset. The function fits a brokenstick and linear model to the training data, and then uses the models to make predictions for the testing individual. Matching is performed based on multiple anchor time points using various distance metrics such as Euclidean and Mahalanobis distance. The function returns predicted centiles using the GAMLSS model, and includes the option to visualize the matching and prediction process with plots.
+#'
+#' @param train_data \code{data.frame} The training dataset for fitting the brokenstick and linear models. This dataset also serves as the pool for the matching process.
+#' @param test_data \code{data.frame} The testing dataset for personalized prediction.
+#' @param outcome_var \code{character} The name of the outcome variable of interest.
+#' @param time_var \code{character} The name of the time variable of interest.
+#' @param id_var \code{character} The name of the ID variable representing individuals.
+#' @param tmin \code{numeric} The minimum time point for the prediction.
+#' @param tmax \code{numeric} The maximum time point for the prediction.
+#' @param brokenstick_knots \code{numeric} A vector of knots for the brokenstick model, which do not need to be equally spaced.
+#' @param anchor_time \code{numeric} A time point (or multiple time points) used for the anchor in the matching process.
+#' @param linear_formula \code{formula} The formula used to fit the linear model.
+#' @param gamlss_formula \code{formula} The mean formula for the GAMLSS model, typically used for smoothing as a function of time.
+#' @param gamlss_sigma \code{formula} The sigma formula for the GAMLSS model, used for smoothing as a function of time.
+#' @param match_methods \code{character} Distance methods used for matching. Options are \code{"euclidean"}, \code{"mahalanobis"}, or \code{"single"}.
+#' @param weight \code{logical} Whether to apply weights in the GAMLSS prediction process. Defaults to \code{FALSE}.
+#' @param match_alpha \code{numeric} Alpha parameter for the matching process, typically used in Mahalanobis distance. Can be \code{NULL}.
+#' @param match_number \code{numeric} The number of matches to find during the matching process. Can be \code{NULL} or a numeric value.
+#' @param match_plot \code{logical} If \code{TRUE}, a plot of the matching process will be generated. Defaults to \code{TRUE}.
+#' @param predict_plot \code{logical} If \code{TRUE}, a plot of the prediction process will be generated. Defaults to \code{TRUE}.
+#' @param ... Other arguments passed to the function.
+#'
+#' @return A \code{list} containing the following elements:
+#' \itemize{
+#'   \item \code{predicted_centiles}: A \code{data.frame} of predicted centiles for the individual in the test dataset.
+#'   \item \code{observed_centiles}: A \code{data.frame} of observed centiles for the individual in the test dataset.
+#'   \item \code{matches}: A plot of the matching process, if \code{match_plot = TRUE}.
+#'   \item \code{plot}: A plot of the predicted centiles, if \code{predict_plot = TRUE}.
+#'   \item \code{gamlss_data}: A \code{data.frame} of the subset used for the GAMLSS prediction.
+#' }
+#'
+#' @seealso \code{\link{people_like_i}}, \code{\link{people_like_us}}, \code{\link{people_like_thee}}
+#'
+#' @examples
+#' \dontrun{
+#'   # Example usage
+#'   results <- people_like_me(train_data, test_data, outcome_var = "height", time_var = "age", id_var = "id", ...)
+#' }
+#'
 #' @export
-#'
-#' @examples \dontrun{}
+
 people_like_me <- function(train_data,
                            test_data,
                            outcome_var,
@@ -303,31 +343,49 @@ people_like_me <- function(train_data,
 }
 
 ## 3.3 people-like-us ----------------------------------------------------------
-#' Title People-Like-Me methods for multiple testing dataset individuals
+#' People-Like-Me Methods for Multiple Testing Individuals
 #'
-#' @param train_data The training dataset for brokenstick model and linear model fitting; This training dataset also serves as the pool for matching process.
-#' @param test_data The testing dataset for the personalized prediction.
-#' @param outcome_var The outcome variable of interest.
-#' @param time_var The time variable of interest.
-#' @param id_var The id variable of interest.
-#' @param tmin The minimum time point for the prediction.
-#' @param tmax The maximum time point for the prediction.
-#' @param brokenstick_knots The knots for the brokenstick model, which does not need to be equal distanced.
-#' @param anchor_time The time point for the anchor time for the matching process.
-#' @param linear_model The type of linear model, which can be "lm", "mlm", "gls".
-#' @param linear_formula The formula for the linear model.
-#' @param gamlss_formula The mean formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.
-#' @param gamlss_sigma The sigma formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.
-#' @param match_methods The methods for matching, which can be "euclidean" for multiple time point matching with Euclidean distance, "mahalanobis" for multiple time point mathcing with Mahalanobis distance, "single" for single time point predictive mean matching.
-#' @param weight The weight for the final predictive GAMLSS model, which can be FALSE for no weight, TRUE for the weight from the matching process, "p-value" for the weight from the p-value of the Mahalanobis distance \chi-square distribution.
-#' @param match_alpha The alpha level for the matching process based only on Mahalnobis distance, which can be NULL for no alpha level, or a numeric value for the alpha level.
-#' @param match_number The number of matches for the matching process, which can be NULL for no number of matches, or a numeric value for the number of matches.
-#' @param match_plot The logical value for the matching plot, which can be TRUE for the plot, FALSE for no plot.
-#' @param predict_plot The logical value for the prediction plot, which can be TRUE for the plot, FALSE for no plot.
-#' @param ... Other arguments for the function.
-#' @return A list of the predicted centiles, observed centiles, and the plot if the `predict_plot` argument is TRUE.
+#' @description This function is part of the People-Like-Me method and is designed for personalized prediction of centiles for multiple individuals in the testing dataset. The function fits a brokenstick and linear model to the training data, and then uses the models to make predictions for multiple testing individuals. Matching is performed based on various distance metrics such as Euclidean or Mahalanobis distance or by single time point matching. The function returns predicted centiles using the GAMLSS model, with options to visualize both the matching and prediction processes.
+#'
+#' @param train_data \code{data.frame} The training dataset for fitting the brokenstick and linear models. This dataset also serves as the pool for the matching process.
+#' @param test_data \code{data.frame} The testing dataset for personalized prediction.
+#' @param outcome_var \code{character} The name of the outcome variable of interest.
+#' @param time_var \code{character} The name of the time variable of interest.
+#' @param id_var \code{character} The name of the ID variable representing individuals.
+#' @param tmin \code{numeric} The minimum time point for the prediction.
+#' @param tmax \code{numeric} The maximum time point for the prediction.
+#' @param brokenstick_knots \code{numeric} A vector of knots for the brokenstick model, which do not need to be equally spaced.
+#' @param anchor_time \code{numeric} A time point (or multiple time points) used for the anchor in the matching process.
+#' @param linear_model \code{character} The type of linear model to be used. Options are \code{"lm"} for a single linear model, \code{"mlm"} for a multiple linear model, and \code{"gls"} for generalized least squares.
+#' @param linear_formula \code{formula} The formula used to fit the linear model.
+#' @param gamlss_formula \code{formula} The mean formula for the GAMLSS model, typically used for smoothing as a function of time.
+#' @param gamlss_sigma \code{formula} The sigma formula for the GAMLSS model, used for smoothing as a function of time.
+#' @param match_methods \code{character} Distance methods used for matching. Options are \code{"euclidean"}, \code{"mahalanobis"}, or \code{"single"}.
+#' @param weight \code{logical} Whether to apply weights in the GAMLSS prediction process. Defaults to \code{FALSE}.
+#' @param match_alpha \code{numeric} Alpha parameter for the matching process, typically used in Mahalanobis distance. Can be \code{NULL}.
+#' @param match_number \code{numeric} The number of matches to find during the matching process. Can be \code{NULL} or a numeric value.
+#' @param match_plot \code{logical} If \code{TRUE}, a plot of the matching process will be generated. Defaults to \code{TRUE}.
+#' @param predict_plot \code{logical} If \code{TRUE}, a plot of the prediction process will be generated. Defaults to \code{TRUE}.
+#' @param ... Other arguments passed to the function.
+#'
+#' @return A \code{list} containing the following elements:
+#' \itemize{
+#'   \item \code{predicted_centiles}: A \code{data.frame} of predicted centiles for individuals in the test dataset.
+#'   \item \code{observed_centiles}: A \code{data.frame} of observed centiles for individuals in the test dataset.
+#'   \item \code{matches}: A plot of the matching process, if \code{match_plot = TRUE}.
+#'   \item \code{plot}: A plot of the predicted centiles, if \code{predict_plot = TRUE}.
+#'   \item \code{gamlss_data}: A \code{data.frame} of the subset used for the GAMLSS prediction.
+#' }
+#'
+#' @seealso \code{\link{people_like_me}}, \code{\link{people_like_i}}, \code{\link{people_like_thee}}
+#'
+#' @examples
+#' \dontrun{
+#'   # Example usage with the internal dataset
+#'   results <- people_like_us(train_data, test_data, outcome_var = "height", time_var = "age", id_var = "id", ...)
+#' }
+#'
 #' @export
-#' @examples \dontrun{}
 
 people_like_us <- function(train_data,
                            test_data,

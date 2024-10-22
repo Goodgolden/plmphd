@@ -2,75 +2,95 @@
 % Please edit documentation in R/05_people-like-thee.R
 \name{people_like_thee}
 \alias{people_like_thee}
-\title{Title People-Like-Me for Dynamic Prediction}
+\title{People-Like-Me for Dynamic Prediction}
 \usage{
-people_like_thee(
-  train_data,
-  test_data,
-  new_data,
-  outcome_var = "ht",
-  time_var = "time",
-  id_var = "id",
-  tmin,
-  tmax,
-  brokenstick_knots,
-  anchor_time = "(5, 10, 15)",
-  gamlss_formula,
-  gamlss_sigma,
-  match_methods = c("euclidean", "mahalanobis"),
-  weight = FALSE,
-  match_alpha = NULL,
-  match_number = NULL,
-  match_plot = FALSE,
-  predict_plot = TRUE,
-  ...
-)
+people_like_thee(train_data, test_data, new_data, outcome_var, time_var, id_var, ...)
 }
 \arguments{
-\item{train_data}{the training dataset}
+\item{train_data}{\code{data.frame}. The training dataset.}
 
-\item{test_data}{the testing dataset}
+\item{test_data}{\code{data.frame}. The testing dataset.}
 
-\item{new_data}{the new dataset for prediction}
+\item{new_data}{\code{data.frame}. A new dataset for prediction.}
 
-\item{outcome_var}{the outcome variable in the dataset}
+\item{outcome_var}{\code{character}. The name of the outcome variable in the dataset.}
 
-\item{time_var}{the time variable in the dataset}
+\item{time_var}{\code{character}. The name of the time variable in the dataset.}
 
-\item{id_var}{the id variable in the dataset}
+\item{id_var}{\code{character}. The name of the ID variable in the dataset.}
 
-\item{tmin}{the minimum time for the prediction}
+\item{tmin}{\code{numeric}. The minimum time point for prediction.}
 
-\item{tmax}{the maximum time for the prediction}
+\item{tmax}{\code{numeric}. The maximum time point for prediction.}
 
-\item{brokenstick_knots}{the knots for the brokenstick model}
+\item{anchor_time}{\code{numeric vector}. The anchor time point for the prediction.}
 
-\item{anchor_time}{the anchor time for the prediction}
+\item{gamlss_formula}{\code{formula or text}. The formula for the GAMLSS model's mean function.}
 
-\item{gamlss_formula}{the formula for the GAMLSS model mean function part}
+\item{gamlss_sigma}{\code{formula or text}. The formula for the GAMLSS model's sigma function.}
 
-\item{gamlss_sigma}{the formula for the GAMLSS model sigma function part}
+\item{match_methods}{\code{character}. The distance metric used for matching (e.g., \code{"euclidean"} or \code{"mahalanobis"}).}
 
-\item{match_methods}{the methods for matching the individuals}
+\item{weight}{\code{logical}. Whether to include the weights for the GAMLSS model.}
 
-\item{weight}{the weighted regression inputs for the GAMLSS model}
+\item{match_alpha}{\code{numeric}. Alpha level for matching (e.g., \code{0.05}).}
 
-\item{match_alpha}{the alpha level for the matching}
+\item{match_number}{\code{integer}. The number of matches to include for each individual.}
 
-\item{match_number}{the number of matches for the matching}
+\item{match_plot}{\code{logical}. If \code{TRUE}, a plot of the matching process will be generated.}
 
-\item{match_plot}{whether you want to include the plot for the matching}
+\item{predict_plot}{\code{logical}. If \code{TRUE}, a plot of the predicted and observed values will be generated.}
 
-\item{predict_plot}{whether you want to include the plot for the prediction}
+\item{...}{Additional arguments passed to other methods.}
 
-\item{...}{other arguments}
+\item{brokenstick_knots}{\code{numeric vector}. The knots for the brokenstick model.}
 }
 \value{
-a list of predicted values for the testing dataset with observational time, the predictive time, and the predicted values.
+A list containing:
+\describe{
+\item{\code{centiles_observed}}{\code{numeric}. The observed centiles based on the testing dataset's observed values.}
+\item{\code{centiles_predicted}}{\code{numeric}. The predicted centiles based on the testing dataset's predicted values.}
+\item{\code{plot}}{\code{ggplot2 plot}. A plot showing both observed and predicted centiles, if \code{predict_plot = TRUE}.}
+}
 }
 \description{
-Title People-Like-Me for Dynamic Prediction
+This function predicts outcomes for a testing dataset using a dynamic prediction method. It fits a brokenstick-like model using \code{lme4::lmer()} on the training dataset, which can include time-variant and -invariant variables, as well as interactions. The model is then applied to predict outcomes in the testing dataset at specified anchor times. A matching step using Euclidean or Mahalanobis distances for individuals is included. The final model is a weighted GAMLSS model with user-defined formulas for the mean and sigma functions. The function returns predicted values for the testing dataset, including observation times, predictive times, and predicted values.
+}
+\details{
+The brokenstick-like model is based on \code{lme4::lmer()} and the dynamic prediction uses the \code{JMbayes2::IndvPred_lme()} method. Individual matching is based on distance measures, and predictions are made using a weighted GAMLSS model for each individual.
+}
+\note{
+\describe{
+\item{\code{matching_number} and \code{matching_alpha}}{Only one of these can be used for the Mahalanobis distance matching method.}
+\item{Euclidean and \code{matching_number}}{Only \code{matching_number} can be used for the Euclidean distance matching method.}
+}
 }
 \examples{
-\dontrun{}
+\dontrun{
+# Example usage
+result <- people_like_thee(
+  train_data = train_data,
+  test_data = test_data,
+  new_data = new_data,
+  outcome_var = "outcome",
+  time_var = "time",
+  id_var = "id",
+  tmin = 0,
+  tmax = 10,
+  brokenstick_knots = c(1, 3, 5),
+  anchor_time = 5,
+  gamlss_formula = y ~ x,
+  gamlss_sigma = ~ z,
+  match_methods = "mahalanobis",
+  weight = NULL,
+  match_alpha = 0.95,
+  # match_number = 5,  # only use one method
+  match_plot = TRUE,
+  predict_plot = TRUE
+)
+
+# Accessing results
+print(result$centiles_observed)
+print(result$centiles_predicted)
+}
 }

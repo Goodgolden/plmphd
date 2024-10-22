@@ -2,7 +2,7 @@
 % Please edit documentation in R/04_people-like-us.R
 \name{people_like_us}
 \alias{people_like_us}
-\title{Title People-Like-Me methods for multiple testing dataset individuals}
+\title{People-Like-Me Methods for Multiple Testing Individuals}
 \usage{
 people_like_us(
   train_data,
@@ -28,52 +28,66 @@ people_like_us(
 )
 }
 \arguments{
-\item{train_data}{The training dataset for brokenstick model and linear model fitting; This training dataset also serves as the pool for matching process.}
+\item{train_data}{\code{data.frame} The training dataset for fitting the brokenstick and linear models. This dataset also serves as the pool for the matching process.}
 
-\item{test_data}{The testing dataset for the personalized prediction.}
+\item{test_data}{\code{data.frame} The testing dataset for personalized prediction.}
 
-\item{outcome_var}{The outcome variable of interest.}
+\item{outcome_var}{\code{character} The name of the outcome variable of interest.}
 
-\item{time_var}{The time variable of interest.}
+\item{time_var}{\code{character} The name of the time variable of interest.}
 
-\item{id_var}{The id variable of interest.}
+\item{id_var}{\code{character} The name of the ID variable representing individuals.}
 
-\item{tmin}{The minimum time point for the prediction.}
+\item{tmin}{\code{numeric} The minimum time point for the prediction.}
 
-\item{tmax}{The maximum time point for the prediction.}
+\item{tmax}{\code{numeric} The maximum time point for the prediction.}
 
-\item{brokenstick_knots}{The knots for the brokenstick model, which does not need to be equal distanced.}
+\item{brokenstick_knots}{\code{numeric} A vector of knots for the brokenstick model, which do not need to be equally spaced.}
 
-\item{anchor_time}{The time point for the anchor time for the matching process.}
+\item{anchor_time}{\code{numeric} A time point (or multiple time points) used for the anchor in the matching process.}
 
-\item{linear_model}{The type of linear model, which can be "lm", "mlm", "gls".}
+\item{linear_model}{\code{character} The type of linear model to be used. Options are \code{"lm"} for a single linear model, \code{"mlm"} for a multiple linear model, and \code{"gls"} for generalized least squares.}
 
-\item{linear_formula}{The formula for the linear model.}
+\item{linear_formula}{\code{formula} The formula used to fit the linear model.}
 
-\item{gamlss_formula}{The mean formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.}
+\item{gamlss_formula}{\code{formula} The mean formula for the GAMLSS model, typically used for smoothing as a function of time.}
 
-\item{gamlss_sigma}{The sigma formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.}
+\item{gamlss_sigma}{\code{formula} The sigma formula for the GAMLSS model, used for smoothing as a function of time.}
 
-\item{match_methods}{The methods for matching, which can be "euclidean" for multiple time point matching with Euclidean distance, "mahalanobis" for multiple time point mathcing with Mahalanobis distance, "single" for single time point predictive mean matching.}
+\item{match_methods}{\code{character} Distance methods used for matching. Options are \code{"euclidean"}, \code{"mahalanobis"}, or \code{"single"}.}
 
-\item{weight}{The weight for the final predictive GAMLSS model, which can be FALSE for no weight, TRUE for the weight from the matching process, "p-value" for the weight from the p-value of the Mahalanobis distance \chi-square distribution.}
+\item{weight}{\code{logical} Whether to apply weights in the GAMLSS prediction process. Defaults to \code{FALSE}.}
 
-\item{match_alpha}{The alpha level for the matching process based only on Mahalnobis distance, which can be NULL for no alpha level, or a numeric value for the alpha level.}
+\item{match_alpha}{\code{numeric} Alpha parameter for the matching process, typically used in Mahalanobis distance. Can be \code{NULL}.}
 
-\item{match_number}{The number of matches for the matching process, which can be NULL for no number of matches, or a numeric value for the number of matches.}
+\item{match_number}{\code{numeric} The number of matches to find during the matching process. Can be \code{NULL} or a numeric value.}
 
-\item{match_plot}{The logical value for the matching plot, which can be TRUE for the plot, FALSE for no plot.}
+\item{match_plot}{\code{logical} If \code{TRUE}, a plot of the matching process will be generated. Defaults to \code{TRUE}.}
 
-\item{predict_plot}{The logical value for the prediction plot, which can be TRUE for the plot, FALSE for no plot.}
+\item{predict_plot}{\code{logical} If \code{TRUE}, a plot of the prediction process will be generated. Defaults to \code{TRUE}.}
 
-\item{...}{Other arguments for the function.}
+\item{...}{Other arguments passed to the function.}
 }
 \value{
-A list of the predicted centiles, observed centiles, and the plot if the \code{predict_plot} argument is TRUE.
+A \code{list} containing the following elements:
+\itemize{
+\item \code{predicted_centiles}: A \code{data.frame} of predicted centiles for individuals in the test dataset.
+\item \code{observed_centiles}: A \code{data.frame} of observed centiles for individuals in the test dataset.
+\item \code{matches}: A plot of the matching process, if \code{match_plot = TRUE}.
+\item \code{plot}: A plot of the predicted centiles, if \code{predict_plot = TRUE}.
+\item \code{gamlss_data}: A \code{data.frame} of the subset used for the GAMLSS prediction.
+}
 }
 \description{
-Title People-Like-Me methods for multiple testing dataset individuals
+This function is part of the People-Like-Me method and is designed for personalized prediction of centiles for multiple individuals in the testing dataset. The function fits a brokenstick and linear model to the training data, and then uses the models to make predictions for multiple testing individuals. Matching is performed based on various distance metrics such as Euclidean or Mahalanobis distance or by single time point matching. The function returns predicted centiles using the GAMLSS model, with options to visualize both the matching and prediction processes.
 }
 \examples{
-\dontrun{}
+\dontrun{
+  # Example usage with the internal dataset
+  results <- people_like_us(train_data, test_data, outcome_var = "height", time_var = "age", id_var = "id", ...)
+}
+
+}
+\seealso{
+\code{\link{people_like_me}}, \code{\link{people_like_i}}, \code{\link{people_like_thee}}
 }

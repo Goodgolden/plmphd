@@ -2,7 +2,7 @@
 % Please edit documentation in R/01_impute.R
 \name{multiple_impute}
 \alias{multiple_impute}
-\title{Title Multiple Linear Regression imputation at anchor time points}
+\title{Multiple Linear Regression Imputation at Anchor Time Points}
 \usage{
 multiple_impute(
   lm_formula,
@@ -16,37 +16,59 @@ multiple_impute(
 )
 }
 \arguments{
-\item{lm_formula}{the second stage model with a user defined linear regression formula,
-it depends on the liner model type and anchor time points used.}
+\item{lm_formula}{\code{formula}. A user-defined linear regression formula for the second-stage imputation. The formula can vary depending on the linear model type and the anchor time points used.}
 
-\item{data_impute}{the design matrix for training data set for the linear regression model,}
+\item{data_impute}{\code{data.frame}. The design matrix for the training dataset used to fit the linear regression models.}
 
-\item{data_test}{the design matrix for testing data set for the linear regression model,}
+\item{data_test}{\code{data.frame}. The design matrix for the testing dataset for which missing values are imputed using the linear regression models.}
 
-\item{id_var}{the id variable name must be included in the dataset}
+\item{id_var}{\code{character}. The name of the ID variable in the dataset.}
 
-\item{outcome_var}{the outcome variable name must be included in the dataset}
+\item{outcome_var}{\code{character}. The name of the outcome variable in the dataset.}
 
-\item{time_var}{the time variable name must be included in the dataset}
+\item{time_var}{\code{character}. The name of the time variable in the dataset.}
 
-\item{anchor_time}{the anchor time set for imputation}
+\item{anchor_time}{\code{numeric}. The anchor time points at which imputation is performed.}
 
-\item{...}{Not used, but required for future extension}
+\item{...}{Additional arguments, currently not used but included for future extensions.}
 }
 \value{
-A list with the imputed values for the training data set and testing data set,
-and the summarization for the linear models probably will be removed in the furture.
+A list containing:
+\describe{
+\item{\code{testing}}{\code{data.frame}. The testing dataset with imputed values at the anchor time points.}
+\item{\code{training}}{\code{data.frame}. The training dataset with imputed values at the anchor time points.}
+\item{\code{summary}}{\code{list}. A list of fitted linear models for each anchor time point.}
+}
 }
 \description{
-The function is used to impute the missing values after the brokenstick model;
-the function will take the outcomes from the brokenstick model and impute the outcomes at the
-anchor time points using multiple linear regressions model at each anchor time point.
-We will include extra time-invariant covariates. Different from \code{linear_impute()} function,
-Here we fit multiple linear regression models at each anchor time point independently,
-which grant more flexibility for the models.
-This function is mainly used in \code{people-like-me()} and \code{people-like-us()} function,
-as an alternate to \code{linear_impute()}.
+This function is used to impute missing values after the first-stage imputation with the brokenstick model. It takes the imputed outcomes from the brokenstick model and imputes outcomes at anchor time points using multiple linear regression models. A separate linear regression model is fitted at each anchor time point, allowing for greater flexibility. Time-invariant covariates can also be included in the model. This function is mainly used within \code{people-like-me()} and \code{people-like-us()} as an alternative to \code{linear_impute()}.
+}
+\details{
+Each anchor time point is treated independently, and a linear regression model is fitted at each anchor time point separately. This method offers more flexibility than the \code{linear_impute()} function, where a single linear model is fitted across time points.
 }
 \examples{
-\dontrun {}
+\dontrun{
+# Define the necessary parameters
+lm_formula <- "outcome ~ time + covariate"
+id_var <- "id"
+outcome_var <- "outcome"
+time_var <- "time"
+anchor_time <- c(3, 6, 9)  # Example anchor times
+
+# Call the multiple_impute function
+result <- multiple_impute(
+  lm_formula = lm_formula,
+  data_impute = data_impute,  # Assumed pre-defined data
+  data_test = data_test,      # Assumed pre-defined data
+  id_var = id_var,
+  outcome_var = outcome_var,
+  time_var = time_var,
+  anchor_time = anchor_time
+)
+
+# Access the imputed values and model summaries
+head(result$testing)   # Imputed testing dataset
+head(result$training)  # Imputed training dataset
+summary(result$summary[[1]]) # Summary of the first linear model
+}
 }

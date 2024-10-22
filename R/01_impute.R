@@ -1,27 +1,66 @@
 # First level imputation -------------------------------------------------------
 
 ## 1.1 impute_brokenstick -----------------------------------------------------
-#' Title First Stage model imputation with `brokenstick::brokenstick()` at anchor time points
+#' First Stage Model Imputation with `brokenstick::brokenstick()` at Anchor Time Points
+#'
 #' @description
-#' The predictions from a broken stick model coincide with
-#' the group-conditional means of the random effects.
-#' This function takes the `data` with selected `outcome_var`, `time_var`,
-#' and `id_var`. The user can calculate prediction (imputation) at
-#' given anchor `time` set.
+#' This function uses the `brokenstick::brokenstick()` model to impute values at specified anchor time points in a longitudinal dataset. The predictions from the broken stick model represent the group-conditional means of the random effects. The user can calculate prediction (imputation) at given anchor time points using specified outcome, time, and ID variables.
 #'
-#' @param outcome_var The outcome_var variable name must include in the dataset
-#' @param time_var The time variable name must be included in the dataset
-#' @param id_var The id variable name must be included in the dataset
-#' @param bs_knots The internal knots for brokenstick model
-#' @param anchor_time The anchor time set for imputation,
-#' @param data A data frame in which to look for variables with which to fit
-#' the brokenstick model and predict. Ideally, this is a longitudinal
-#' data.frame object in long-format.
-#' @param ... Not used, but required for future extension
+#' @param outcome_var \code{character}. The name of the outcome variable in the dataset.
+#' @param time_var \code{character}. The name of the time variable in the dataset.
+#' @param id_var \code{character}. The name of the ID variable in the dataset.
+#' @param bs_knots \code{numeric vector}. The internal knots for the brokenstick model.
+#' @param anchor_time \code{numeric}. The anchor time point(s) for imputation.
+#' @param data \code{data.frame}. A longitudinal dataset in long format, containing the specified variables.
+#' @param ... Not used, but required for future extension.
 #'
-#' @return A data frame with the imputed values
+#' @return \code{data.frame}. A data frame with the imputed values at the anchor time points, baseline information, and the fitted model.
+#'
+#' @details
+#' The function fits the brokenstick model based on the provided outcome, time, and ID variables, and then predicts the outcome variable at the given anchor time points. The returned data frame contains the imputed values, the baseline outcome values, and the original dataset.
+#' The attributes of the returned data frame include:
+#' \describe{
+#'   \item{\code{model}}{The fitted brokenstick model object.}
+#'   \item{\code{prediction}}{The predicted values from the model at the anchor time points.}
+#'   \item{\code{baseline}}{The baseline values for the outcome variable.}
+#' }
+#'
 #' @export
-#' @examples \dontrun {}
+#'
+#' @examples
+#' \dontrun{
+#' # Example of using the function
+#' # Sample data preparation
+#' library(dplyr)
+#' data <- data.frame(
+#'   id = rep(1:10, each = 5),
+#'   time = rep(seq(0, 10, by = 2.5), 10),
+#'   outcome = rnorm(50)
+#' )
+#'
+#' # Define the parameters
+#' outcome_var <- "outcome"
+#' time_var <- "time"
+#' id_var <- "id"
+#' bs_knots <- c(2.5, 5, 7.5)
+#' anchor_time <- c(3, 6, 9)
+#'
+#' # Call the impute_brokenstick function
+#' result <- impute_brokenstick(
+#'   outcome_var = outcome_var,
+#'   time_var = time_var,
+#'   id_var = id_var,
+#'   bs_knots = bs_knots,
+#'   anchor_time = anchor_time,
+#'   data = data
+#' )
+#'
+#' # Inspect the result
+#' head(result)
+#' attr(result, "model")   # Access the fitted model
+#' attr(result, "baseline") # Access the baseline data
+#' }
+
 ## need to add the example and see how things going
 impute_brokenstick <- function(outcome_var,
                                time_var,
@@ -88,30 +127,64 @@ impute_brokenstick <- function(outcome_var,
 # Second level imputation ------------------------------------------------------
 ## 1.2 linear_impute ----------------------------------------------------------
 
-#' Title Second Stage Model Linear Regression at anchor time points
+#' Second Stage Model Linear Regression at Anchor Time Points
 #'
-#' @description The function is used to impute the missing values after the brokenstick model;
-#' the function will take the outcomes from the brokenstick model and impute the outcomes at the
-#' anchor time points using a linear regression model. We will include extra time-invariant covariates
-#' into the linear model and the baseline outcome (possibly with interaction terms).
-#' Currently this function is only called in the single time point matching `people_like_i()` function.
-#' @param lm_formula the second stage model with a user defined linear regression formula,
-#' optional to include other time-invariant covariates and baseline outcome.
-#' @param data_impute the training data set for the linear regression model,
-#' which depends on the anchor time points
-#' @param data_test the testing data set for the linear regression model,
-#' which depends on the anchor time points
-#' @param id_var the id variable name must be included in the dataset
-#' @param outcome_var the outcome variable name must be included in the dataset
-#' @param time_var the time variable name must be included in the dataset
-#' @param anchor_time the anchor time set for imputation
-#' @param ... Not used, but required for future extension
+#' @description This function performs a second-stage imputation using linear regression at anchor time points, after the first-stage imputation with the brokenstick model. It takes the imputed outcomes from the brokenstick model and performs imputation for missing values at anchor time points using a linear regression model. The model can include time-invariant covariates and baseline outcomes, possibly with interaction terms. This function is primarily called within the `people_like_i()` function for single time point matching.
 #'
-#' @return A list with the imputed values for the training data set and testing data set
+#' @param lm_formula \code{formula}. A user-defined linear regression formula for the second-stage imputation. The formula can optionally include additional time-invariant covariates and baseline outcomes.
+#' @param data_impute \code{data.frame}. The training dataset used to fit the linear regression model, based on the anchor time points.
+#' @param data_test \code{data.frame}. The testing dataset for which missing values are imputed using the linear regression model.
+#' @param id_var \code{character}. The name of the ID variable in the dataset.
+#' @param outcome_var \code{character}. The name of the outcome variable in the dataset.
+#' @param time_var \code{character}. The name of the time variable in the dataset.
+#' @param anchor_time \code{numeric}. The anchor time point(s) at which imputation is performed.
+#' @param ... Additional arguments, currently not used but included for future extensions.
+#'
+#' @return A list containing:
+#' \describe{
+#'   \item{\code{testing}}{\code{data.frame}. The testing dataset with imputed values at the anchor time points.}
+#'   \item{\code{training}}{\code{data.frame}. The training dataset with imputed values at the anchor time points.}
+#'   \item{\code{summary}}{\code{summary.lm}. A summary of the fitted linear regression model.}
+#' }
+#'
 #' @export
 #'
-#' @examples \dontrun {}
+#' @examples
+#' \dontrun{
+#' # Example usage
+#' # Prepare sample data
+#' data_impute <- data.frame(
+#'   id = rep(1:10, each = 5),
+#'   time = rep(seq(0, 10, by = 2.5), 10),
+#'   outcome = rnorm(50),
+#'   covariate = runif(50)
+#' )
+#' data_test <- data_impute
 #'
+#' # Define parameters
+#' lm_formula <- "outcome ~ time + covariate"
+#' id_var <- "id"
+#' outcome_var <- "outcome"
+#' time_var <- "time"
+#' anchor_time <- 5
+#'
+#' # Call the linear_impute function
+#' result <- linear_impute(
+#'   lm_formula = lm_formula,
+#'   data_impute = data_impute,
+#'   data_test = data_test,
+#'   id_var = id_var,
+#'   outcome_var = outcome_var,
+#'   time_var = time_var,
+#'   anchor_time = anchor_time
+#' )
+#'
+#' # Inspect the results
+#' head(result$testing)  # Testing dataset with imputed values
+#' head(result$training) # Training dataset with imputed values
+#' print(result$summary) # Summary of the linear regression model
+#' }
+
 linear_impute <- function(lm_formula,
                           data_impute,
                           data_test,
@@ -163,31 +236,56 @@ linear_impute <- function(lm_formula,
     }
 
 ## 1.3 multiple_impute --------------------------------------------------------
-#' Title Multiple Linear Regression imputation at anchor time points
-#' @description The function is used to impute the missing values after the brokenstick model;
-#' the function will take the outcomes from the brokenstick model and impute the outcomes at the
-#' anchor time points using multiple linear regressions model at each anchor time point.
-#' We will include extra time-invariant covariates. Different from `linear_impute()` function,
-#' Here we fit multiple linear regression models at each anchor time point independently,
-#' which grant more flexibility for the models.
-#' This function is mainly used in `people-like-me()` and `people-like-us()` function,
-#'  as an alternate to `linear_impute()`.
+#' Multiple Linear Regression Imputation at Anchor Time Points
 #'
-#' @param lm_formula the second stage model with a user defined linear regression formula,
-#' it depends on the liner model type and anchor time points used.
-#' @param data_impute the design matrix for training data set for the linear regression model,
-#' @param data_test the design matrix for testing data set for the linear regression model,
-#' @param id_var the id variable name must be included in the dataset
-#' @param outcome_var the outcome variable name must be included in the dataset
-#' @param time_var the time variable name must be included in the dataset
-#' @param anchor_time the anchor time set for imputation
-#' @param ... Not used, but required for future extension
+#' @description This function is used to impute missing values after the first-stage imputation with the brokenstick model. It takes the imputed outcomes from the brokenstick model and imputes outcomes at anchor time points using multiple linear regression models. A separate linear regression model is fitted at each anchor time point, allowing for greater flexibility. Time-invariant covariates can also be included in the model. This function is mainly used within `people-like-me()` and `people-like-us()` as an alternative to `linear_impute()`.
 #'
-#' @return A list with the imputed values for the training data set and testing data set,
-#' and the summarization for the linear models probably will be removed in the furture.
+#' @param lm_formula \code{formula}. A user-defined linear regression formula for the second-stage imputation. The formula can vary depending on the linear model type and the anchor time points used.
+#' @param data_impute \code{data.frame}. The design matrix for the training dataset used to fit the linear regression models.
+#' @param data_test \code{data.frame}. The design matrix for the testing dataset for which missing values are imputed using the linear regression models.
+#' @param id_var \code{character}. The name of the ID variable in the dataset.
+#' @param outcome_var \code{character}. The name of the outcome variable in the dataset.
+#' @param time_var \code{character}. The name of the time variable in the dataset.
+#' @param anchor_time \code{numeric}. The anchor time points at which imputation is performed.
+#' @param ... Additional arguments, currently not used but included for future extensions.
+#'
+#' @return A list containing:
+#' \describe{
+#'   \item{\code{testing}}{\code{data.frame}. The testing dataset with imputed values at the anchor time points.}
+#'   \item{\code{training}}{\code{data.frame}. The training dataset with imputed values at the anchor time points.}
+#'   \item{\code{summary}}{\code{list}. A list of fitted linear models for each anchor time point.}
+#' }
+#'
+#' @details Each anchor time point is treated independently, and a linear regression model is fitted at each anchor time point separately. This method offers more flexibility than the `linear_impute()` function, where a single linear model is fitted across time points.
+#'
 #' @export
 #'
-#' @examples \dontrun {}
+#' @examples
+#' \dontrun{
+#' # Define the necessary parameters
+#' lm_formula <- "outcome ~ time + covariate"
+#' id_var <- "id"
+#' outcome_var <- "outcome"
+#' time_var <- "time"
+#' anchor_time <- c(3, 6, 9)  # Example anchor times
+#'
+#' # Call the multiple_impute function
+#' result <- multiple_impute(
+#'   lm_formula = lm_formula,
+#'   data_impute = data_impute,  # Assumed pre-defined data
+#'   data_test = data_test,      # Assumed pre-defined data
+#'   id_var = id_var,
+#'   outcome_var = outcome_var,
+#'   time_var = time_var,
+#'   anchor_time = anchor_time
+#' )
+#'
+#' # Access the imputed values and model summaries
+#' head(result$testing)   # Imputed testing dataset
+#' head(result$training)  # Imputed training dataset
+#' summary(result$summary[[1]]) # Summary of the first linear model
+#' }
+
 multiple_impute <- function(lm_formula,
                           data_impute,
                           data_test,

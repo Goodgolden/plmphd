@@ -2,23 +2,29 @@
 % Please edit documentation in R/00_utils.R
 \name{single_df}
 \alias{single_df}
-\title{Title Single time point matching with only matching time (replaced with the singletime_n)}
+\title{Single Time Point Matching}
 \usage{
 single_df(Dmatrix, match_time, center)
 }
 \arguments{
-\item{Dmatrix}{A distance matrix}
+\item{Dmatrix}{\code{matrix} A numeric distance matrix where rows represent time points.}
 
-\item{match_time}{The matching anchor time as setup}
+\item{match_time}{\code{numeric} The anchor time point for matching. This specifies which row (time point) to use for distance calculation.}
 
-\item{center}{The original geographical center}
+\item{center}{\code{numeric} The value representing the center (reference point) from which distances are calculated.}
 }
 \value{
-A distance list arranged from smallest to largest
+A \code{data.frame} with two columns: \code{id}, which represents the identifiers for each element, and \code{diff}, which contains the calculated distances, ordered from smallest to largest absolute difference from the center.
 }
 \description{
-Calculate the distance of a single time point
+This function calculates the distance at a single time point from a given distance matrix. It returns a list of distances, ordered from smallest to largest based on the absolute difference from a specified center.
 }
 \examples{
-\dontrun {}
+\dontrun{
+  # Example usage
+  Dmatrix <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3)
+  match_time <- 2
+  center <- 3
+  single_df(Dmatrix, match_time, center)
+}
 }

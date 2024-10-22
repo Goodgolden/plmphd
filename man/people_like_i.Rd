@@ -2,7 +2,7 @@
 % Please edit documentation in R/04_people-like-us.R
 \name{people_like_i}
 \alias{people_like_i}
-\title{Title Original People-Like-Me for Single-time Matching}
+\title{People-Like-Me for Single-Time Point Matching for Single Individual}
 \usage{
 people_like_i(
   train_data,
@@ -24,47 +24,60 @@ people_like_i(
 )
 }
 \arguments{
-\item{train_data}{The training dataset for brokenstick model and linear model fitting; This training dataset also serves as the pool for matching process.}
+\item{train_data}{\code{data.frame} The training dataset for fitting the brokenstick and linear models. This dataset also serves as the pool for the matching process.}
 
-\item{test_data}{The testing dataset for the personalized prediction.}
+\item{test_data}{\code{data.frame} The testing dataset for personalized prediction.}
 
-\item{outcome_var}{The outcome variable of interest.}
+\item{outcome_var}{\code{character} The name of the outcome variable of interest.}
 
-\item{time_var}{The time variable of interest.}
+\item{time_var}{\code{character} The name of the time variable of interest.}
 
-\item{id_var}{The id variable of interest.}
+\item{id_var}{\code{character} The name of the ID variable representing individuals.}
 
-\item{tmin}{The minimum time point for the prediction.}
+\item{tmin}{\code{numeric} The minimum time point for the prediction.}
 
-\item{tmax}{The maximum time point for the prediction.}
+\item{tmax}{\code{numeric} The maximum time point for the prediction.}
 
-\item{brokenstick_knots}{The knots for the brokenstick model, which does not need to be equal distanced.}
+\item{brokenstick_knots}{\code{numeric} A vector of knots for the brokenstick model, which do not need to be equally spaced.}
 
-\item{anchor_time}{The time point for the anchor time for the matching process.}
+\item{anchor_time}{\code{numeric} The specific time point used as the anchor for the matching process.}
 
-\item{linear_formula}{The formula for the linear model.}
+\item{linear_formula}{\code{formula} The formula used to fit the linear model.}
 
-\item{gamlss_formula}{The mean formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.}
+\item{gamlss_formula}{\code{formula} The mean formula for the GAMLSS model, typically used for smoothing as a function of time.}
 
-\item{gamlss_sigma}{The sigma formula for the GAMLSS model, mainly used as a smoothing process only include the function of time. Here we use the GAMLSS model as a non-parametric / semi-parametric functional process.}
+\item{gamlss_sigma}{\code{formula} The sigma formula for the GAMLSS model, used for smoothing as a function of time.}
 
-\item{match_number}{The number of matches for the matching process, which can be NULL for no number of matches, or a numeric value for the number of matches.}
+\item{match_number}{\code{numeric} The number of matches to find during the matching process. Can be \code{NULL} or a numeric value.}
 
-\item{match_plot}{The logical value for the matching plot, which can be TRUE for the plot, FALSE for no plot.}
+\item{match_plot}{\code{logical} If \code{TRUE}, a plot of the matching process will be generated. Defaults to \code{TRUE}.}
 
-\item{predict_plot}{The logical value for the prediction plot, which can be TRUE for the plot, FALSE for no plot.}
+\item{predict_plot}{\code{logical} If \code{TRUE}, a plot of the prediction process will be generated. Defaults to \code{TRUE}.}
 
-\item{...}{Other arguments for the function.}
+\item{...}{Other arguments passed to the function.}
 }
 \value{
-A list of the predicted centiles, observed centiles, and the plot if the \code{predict_plot} argument is TRUE.
+A \code{list} containing the following attributes:
+\itemize{
+\item \code{predicted_centiles}: A \code{data.frame} of predicted centiles for each individual in the test dataset.
+\item \code{observed_centiles}: A \code{data.frame} of observed centiles for each individual in the test dataset.
+\item \code{plots}: A \code{ggplot} object of the prediction plot, if \code{predict_plot = TRUE}.
+\item \code{subset}: A list of matched individuals based on the single-time point matching process.
+\item \code{linear}: The fitted linear model used to predict outcomes.
+\item \code{brokenstick_model}: The fitted brokenstick model used for initial data imputation and prediction.
+\item \code{matching_plot}: A plot object of the matching process, if \code{match_plot = TRUE}.
+}
 }
 \description{
-The People-Like-Me fucntion is to predict the personalized centiles for the testing dataset based on the training dataset. The function will first fit the brokenstick model and linear model for the training dataset. Then, the function will predict the outcome for the testing dataset based on the linear model. The function will find the matches for the testing dataset based on the single time point prediction. The function will predict the centiles for the testing dataset based on the GAMLSS model and the plot if the \code{predict_plot} argument is TRUE. This function is the basic setup for the People-Like-Me method with single time point matching.
+This function, part of the People-Like-Me method, predicts personalized centiles for a testing dataset based on a training dataset. It first fits a brokenstick model and a linear model to the training data, then predicts outcomes for the test data using the linear model. Matches for the test dataset are determined based on single time point predictions. Finally, the function predicts centiles for the test dataset using a GAMLSS model, with optional plots if \code{predict_plot} is set to \code{TRUE}.
 }
 \examples{
-\dontrun{}
+\dontrun{
+  # Example usage
+  results <- people_like_i(train_data, test_data, outcome_var = "height", time_var = "age", id_var = "id", ...)
+}
+
 }
 \seealso{
-\code{\link[=people_like_me]{people_like_me()}}, \code{\link[=people_like_us]{people_like_us()}}, \code{\link[=people_like_thee]{people_like_thee()}}
+\code{\link{people_like_me}}, \code{\link{people_like_us}}, \code{\link{people_like_thee}}
 }

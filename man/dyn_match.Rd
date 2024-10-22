@@ -2,7 +2,7 @@
 % Please edit documentation in R/02_distance.R
 \name{dyn_match}
 \alias{dyn_match}
-\title{Title The dynamic matching function for the PLM}
+\title{Dynamic Matching Function for People-Like-Me}
 \usage{
 dyn_match(
   lb_train,
@@ -20,36 +20,50 @@ dyn_match(
 )
 }
 \arguments{
-\item{lb_train}{the prediction/imputations from the two stage models (brokenstick model and linear model) dataset for the training data}
+\item{lb_train}{\code{data.frame} The training dataset containing predictions or imputations from two-stage models (brokenstick and linear models).}
 
-\item{lb_test_ind}{the prediction/imputations from the two stage models (brokenstick model and linear model) dataset for the testing data, this is the prediction from the test individual}
+\item{lb_test_ind}{\code{data.frame} The testing individual's dataset containing predictions or imputations from the two-stage models.}
 
-\item{train}{the training dataset because we need to subset the training dataset to get the matched individuals}
+\item{train}{\code{data.frame} The original training dataset used to extract the matched individuals.}
 
-\item{match_methods}{the distance calculation methods, either "euclidean", "mahalanobis", or "single"}
+\item{match_methods}{\code{character} The method used for distance calculation. Options are \code{"euclidean"}, \code{"mahalanobis"}, or \code{"single"} (for single-time matching).}
 
-\item{id_var}{the id variable in the dataset}
+\item{id_var}{\code{character} The name of the ID variable in the dataset.}
 
-\item{outcome_var}{the outcome variable in the dataset}
+\item{outcome_var}{\code{character} The name of the outcome variable in the dataset.}
 
-\item{time_var}{the time variable in the dataset}
+\item{time_var}{\code{character} The name of the time variable in the dataset.}
 
-\item{match_alpha}{the p-value threshold for the matching (specifically for the Mahalanobis distance matching PLM)}
+\item{match_alpha}{\code{numeric} The p-value threshold for Mahalanobis distance matching. If \code{NULL}, this parameter is ignored.}
 
-\item{match_number}{the number of matches you want to get from the distance dataframe (specifically for the Euclidean and Mahalanobis distance matching PLM)}
+\item{match_number}{\code{numeric} The number of matches to retrieve from the distance dataframe, specifically for Euclidean or Mahalanobis distance matching. If \code{NULL}, this parameter is ignored.}
 
-\item{match_time}{the critical time point for single-time matching, the time must be included in the anchor time set; do not need to specify the time for "euclidean" and "mahalanobis" methods}
+\item{match_time}{\code{numeric} The critical time point for single-time matching. This must be specified for single-time matching and included in the anchor time set.}
 
-\item{match_plot}{whether you want to plot the matching individual trajectories}
+\item{match_plot}{\code{logical} Whether to generate a plot of the matching individuals' trajectories. Defaults to \code{FALSE}.}
 
-\item{...}{other arguments for the function}
+\item{...}{Additional arguments passed to the function.}
 }
 \value{
-a list with the matching subset, the plot of the matching individual trajectories, the id of the target individual, the alpha threshold for the Mahalanobis distance matching, and the number of matches for the Euclidean and Mahalanobis distance matching
+A list containing:
+\itemize{
+\item \code{subset}: A \code{data.frame} of the matched subset from the training dataset based on the selected matching method.
+\item \code{plot}: A \code{ggplot} object showing the matching individual trajectories if \code{match_plot = TRUE}, otherwise \code{NULL}.
+}
 }
 \description{
-Title The dynamic matching function for the PLM
+This function performs dynamic matching between a test individual and training data based on specified distance methods (Euclidean, Mahalanobis, or single-time point matching). The function returns a subset of matched individuals and can optionally generate a plot showing the trajectories of the matching individuals.
 }
 \examples{
-\dontrun{}
+\dontrun{
+  matches <- dyn_match(lb_train = train_pred,
+                       lb_test_ind = test_pred,
+                       train = train_data,
+                       match_methods = "euclidean",
+                       id_var = "id",
+                       outcome_var = "height",
+                       time_var = "age",
+                       match_number = 5,
+                       match_plot = TRUE)
+}
 }

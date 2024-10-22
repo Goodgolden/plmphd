@@ -2,21 +2,26 @@
 % Please edit documentation in R/00_utils.R
 \name{mahalanobis_p}
 \alias{mahalanobis_p}
-\title{Title Mahalanobis distance with p-value $\alpha$ criteria}
+\title{Mahalanobis Distance with P-value \eqn{\alpha} Criteria}
 \usage{
 mahalanobis_p(Dmatrix, alpha)
 }
 \arguments{
-\item{Dmatrix}{the distance matrix for calculating Mahalanobis distance}
+\item{Dmatrix}{\code{matrix} A numeric distance matrix where columns represent data points.}
 
-\item{alpha}{the p-value criteria}
+\item{alpha}{\code{numeric} The p-value threshold (\eqn{\alpha}) used to filter the Mahalanobis distances. Only distances with p-values greater than or equal to \code{alpha} will be included in the result.}
 }
 \value{
-A subset of Mahalanobis distance list arranged from smallest to largest
+A \code{data.frame} with two columns: \code{id}, representing the identifiers for each column in the matrix, and \code{diff}, which contains the calculated Mahalanobis distances, ordered by p-value. Only rows with p-values greater than or equal to \code{alpha} are returned.
 }
 \description{
-Title Mahalanobis distance with p-value $\alpha$ criteria
+This function calculates the Mahalanobis distance for each column in a given distance matrix, filters the results based on a specified p-value threshold (\eqn{\alpha}), and returns a subset of distances that meet the criteria.
 }
 \examples{
-\dontrun {}
+\dontrun{
+  # Example usage
+  Dmatrix <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 3)
+  alpha <- 0.05
+  mahalanobis_p(Dmatrix, alpha)
+}
 }

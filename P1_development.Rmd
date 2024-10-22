@@ -113,7 +113,8 @@ use_r("00_data")
 
 use_test("01_impute")
 # use_test("02_distance")
-# use_test("05_simulation")
+use_test("05_people-like-thee")
+use_test("04_people-like-me")
 ```
 
 ## test_check

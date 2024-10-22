@@ -2,7 +2,7 @@
 % Please edit documentation in R/03_prediction.R
 \name{predict_gamlss}
 \alias{predict_gamlss}
-\title{Title Prediction with GAMLSS model}
+\title{Prediction with GAMLSS Model}
 \usage{
 predict_gamlss(
   matching,
@@ -19,30 +19,54 @@ predict_gamlss(
 )
 }
 \arguments{
-\item{matching}{the matching dataset for the subset from the original dataset}
+\item{matching}{\code{data.frame} The dataset of matched individuals from the original dataset.}
 
-\item{test_one}{the target individual data for prediction}
+\item{test_one}{\code{data.frame} The dataset for the target individual for whom predictions are made.}
 
-\item{id_var}{the id variable in the dataset}
+\item{id_var}{\code{character} The name of the ID variable in the dataset.}
 
-\item{time_var}{the time variable in the dataset}
+\item{time_var}{\code{character} The name of the time variable in the dataset.}
 
-\item{outcome_var}{the outcome variable in the dataset}
+\item{outcome_var}{\code{character} The name of the outcome variable in the dataset.}
 
-\item{gamlss_formula}{the formula for the GAMLSS model mean function part}
+\item{tmin}{\code{numeric} The minimum time point for the prediction.}
 
-\item{gamsigma_formula}{the formula for the GAMLSS model sigma function part}
+\item{tmax}{\code{numeric} The maximum time point for the prediction.}
 
-\item{weight}{the weighted regression inputs for the GAMLSS model}
+\item{gamlss_formula}{\code{formula} The formula for the mean function of the GAMLSS model.}
 
-\item{predict_plot}{whether you want to include the plot for the prediction}
+\item{gamsigma_formula}{\code{formula} The formula for the sigma (scale) function of the GAMLSS model.}
+
+\item{weight}{\code{logical} Indicates whether to use weighted regression for the GAMLSS model based on matching. Defaults to \code{FALSE}.}
+
+\item{predict_plot}{\code{logical} Whether to include a plot of the predictions. Defaults to \code{TRUE}.}
 }
 \value{
-a list of observed centiles, predicted centiles, and the plot if the \code{predict_plot} argument is TRUE
+A list containing:
+\itemize{
+\item \code{centiles_observed}: A \code{data.frame} of observed centiles for the individual, along with coverage and bias.
+\item \code{centiles_predicted}: A \code{data.frame} of predicted centiles (5th, 10th, 25th, 50th, 75th, 90th, 95th percentiles) over time.
+\item \code{predictive_centiles}: A \code{ggplot} object of the centile prediction plot if \code{predict_plot = TRUE}, otherwise \code{NULL}.
+}
 }
 \description{
-Title Prediction with GAMLSS model
+This function performs centile prediction using the GAMLSS model for a target individual. It fits the GAMLSS model to the matching dataset and predicts the centiles for the test individual. The function can optionally generate a plot comparing the predicted centiles with the individual’s observational data.
 }
 \examples{
-\dontrun{}
+\dontrun{
+  result <- predict_gamlss(matching = matched_data,
+                           test_one = individual_data,
+                           id_var = "id",
+                           time_var = "time",
+                           outcome_var = "height",
+                           tmin = 1, tmax = 10,
+                           gamlss_formula = "height ~ time",
+                           gamsigma_formula = "~ time",
+                           weight = FALSE,
+                           predict_plot = TRUE)
+}
+
+}
+\seealso{
+\code{\link{plm_ind_plot}} for the plotting function used.
 }

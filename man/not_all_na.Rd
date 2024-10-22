@@ -2,16 +2,27 @@
 % Please edit documentation in R/00_utils.R
 \name{not_all_na}
 \alias{not_all_na}
-\title{Title Checking there is not all NA}
+\title{Check if Not All Values Are Missing (NA)}
 \usage{
 not_all_na(x)
 }
 \arguments{
-\item{x}{the target dataset}
+\item{x}{The target dataset (can be a vector, data frame, or matrix).}
 }
 \value{
-a boolean result
+\code{logical} A boolean result: \code{TRUE} if at least one value is not missing (NA) in the dataset, otherwise \code{FALSE}.
 }
 \description{
-Title Checking there is not all NA
+This function checks if a dataset (or vector) contains at least one non-missing (non-NA) value. It returns \code{TRUE} if there is at least one non-NA value, and \code{FALSE} if all values are missing (NA).
+}
+\examples{
+\dontrun{
+  # Check if a vector has at least one non-NA value
+  not_all_na(c(NA, NA, 3))   # TRUE
+  not_all_na(c(NA, NA, NA))  # FALSE
+
+  # Check if a data frame has at least one non-NA value
+  df <- data.frame(a = c(NA, NA, NA), b = c(NA, 2, NA))
+  not_all_na(df)  # TRUE
+}
 }
