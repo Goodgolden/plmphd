@@ -364,7 +364,7 @@ dyn_match <- function(lb_train,
   #   mutate_all(as.numeric)
   # center = as.numeric(unlist(lb_test_ind[, outcome_var]))
 
-  center = as.numeric(unlist(lb_test_ind))
+  center = as.numeric(unlist(lb_test_ind$predicted_y))
 
   if (match_methods == "euclidean") {
     dist_df <<- lb_train %>%

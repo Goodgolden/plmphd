@@ -47,9 +47,12 @@ pullout <- function(location,
     map("centiles_observed") %>% 
     map_dfr(~mutate(., bias = abs(actual - `50`),
            mse = (actual - `50`)^2,
-           cov50 = ifelse(actual <= `75` & actual >= `25`, 1, 0),
-           cov80 = ifelse(actual <= `90` & actual >= `10`, 1, 0),
-           cov90 = ifelse(actual <= `95` & actual >= `5`, 1, 0)) %>% 
+           cov50 = ifelse(actual <= `75` & 
+                            actual >= `25`, 1, 0),
+           cov80 = ifelse(actual <= `90` & 
+                            actual >= `10`, 1, 0),
+           cov90 = ifelse(actual <= `95` & 
+                            actual >= `5`, 1, 0)) %>% 
              colMeans()) %>%
     dplyr::select(bias, mse, cov50, cov80, cov90) %>%
     colMeans()
@@ -57,9 +60,12 @@ pullout <- function(location,
     map("centiles_observed") %>% 
     map_dfr(~mutate(., bias = abs(actual - `50`),
            mse = (actual - `50`)^2,
-           cov50 = ifelse(actual <= `75` & actual >= `25`, 1, 0),
-           cov80 = ifelse(actual <= `90` & actual >= `10`, 1, 0),
-           cov90 = ifelse(actual <= `95` & actual >= `5`, 1, 0)) %>% 
+           cov50 = ifelse(actual <= `75` & 
+                            actual >= `25`, 1, 0),
+           cov80 = ifelse(actual <= `90` & 
+                            actual >= `10`, 1, 0),
+           cov90 = ifelse(actual <= `95` & 
+                            actual >= `5`, 1, 0)) %>% 
              colMeans()) %>%
     dplyr::select(bias, mse, cov50, cov80, cov90) %>%
     colMeans()
@@ -67,9 +73,12 @@ pullout <- function(location,
     map("centiles_observed") %>% 
     map_dfr(~mutate(., bias = abs(actual - `50`),
            mse = (actual - `50`)^2,
-           cov50 = ifelse(actual <= `75` & actual >= `25`, 1, 0),
-           cov80 = ifelse(actual <= `90` & actual >= `10`, 1, 0),
-           cov90 = ifelse(actual <= `95` & actual >= `5`, 1, 0)) %>% 
+           cov50 = ifelse(actual <= `75` & 
+                            actual >= `25`, 1, 0),
+           cov80 = ifelse(actual <= `90` & 
+                            actual >= `10`, 1, 0),
+           cov90 = ifelse(actual <= `95` & 
+                            actual >= `5`, 1, 0)) %>% 
              colMeans()) %>%
     dplyr::select(bias, mse, cov50, cov80, cov90) %>%
     colMeans()
@@ -77,9 +86,12 @@ pullout <- function(location,
     map("centiles_observed") %>% 
     map_dfr(~mutate(., bias = abs(actual - `50`),
            mse = (actual - `50`)^2,
-           cov50 = ifelse(actual <= `75` & actual >= `25`, 1, 0),
-           cov80 = ifelse(actual <= `90` & actual >= `10`, 1, 0),
-           cov90 = ifelse(actual <= `95` & actual >= `5`, 1, 0)) %>% 
+           cov50 = ifelse(actual <= `75` & 
+                            actual >= `25`, 1, 0),
+           cov80 = ifelse(actual <= `90` & 
+                            actual >= `10`, 1, 0),
+           cov90 = ifelse(actual <= `95` & 
+                            actual >= `5`, 1, 0)) %>% 
              colMeans()) %>%
     dplyr::select(bias, mse, cov50, cov80, cov90) %>%
     colMeans()
@@ -240,6 +252,7 @@ cov80_plot <- data %>%
         axis.text.y = element_text(size = 15),
         axis.title.y = element_text(size = 16)) 
           ## the tableau is in the ggthemes
+
 
 cov90_plot <- data %>% 
           filter(term == "coverage90") %>%

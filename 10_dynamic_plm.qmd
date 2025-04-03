@@ -175,7 +175,11 @@ summary(rePCA(bks_lmer))
 #                                 bs_knots = bsk_knots,
 #                                 anchor_time = anchor,
 #                                 data = train2)
-# View(bks_imput)
+save(bks_lmer, file = "results/P01_brokenstick_lmer_model.Rdata")
+
+View(bks_lmer)
+View(bks_lmer@u)
+
 ```
 
 You can check with the rePCA function from 
@@ -216,8 +220,10 @@ lp_test <- IndvPred_lmer(lmerObject = bks_lmer,
                           timeVar = "time",
                           outcomeVar = "ht",
                           idVar = "id",
-                          lmer.fixed = "1 + bs(time, knots = c(3, 6, 9, 12), degree = 1) * sex",
-                          lmer.random = "1 + bs(time, knots = c(3, 6, 9, 12), degree = 1) * sex",
+                          lmer.fixed = "1 + bs(time, knots = c(3, 6, 9, 12),
+                         degree = 1) * sex",
+                          lmer.random = "1 + bs(time, knots = c(3, 6, 9, 12), 
+                         degree = 1) * sex",
                           M = 500,
                           times = anchor,
                           all_times = TRUE,
@@ -478,8 +484,6 @@ subset <- data2 %>%
                           match_plot = TRUE),
               .progress = TRUE)
 
-View(subset)
-
 ```
 
 ```{r}
@@ -506,7 +510,7 @@ Any suggestions and ideas?
 
 
 ```{r}
-knitr::include_graphics("figures/P01_matching_subset_plot.png")
+knitr::include_graphics("figures/P01_matching_subset_plot_mhl_0.95_time2.png")
 ```
 
 ## Step4 Final prediction
@@ -551,3 +555,35 @@ ggsave("figures/P01_final_predictive_plot_095_anchor3_time2.png",
 ```{r}
 knitr::include_graphics("figures/P01_final_predictive_plot_095_anchor3_time2.png")
 ```
+
+```{r}
+load("figures/P01_gamlss_subset_results_data_p095_time2.Rdata")
+
+meanout <- function(dataset,
+                    term = c("bias", "mse", "coverage50",
+                             "coverage80", "coverage90"),
+                    ...){
+  result <- dataset$centiles_observed %>%
+    mutate(mse = bias^2) %>%
+    dplyr::select(bias, mse, coverage50, coverage80, coverage90) %>%
+    colMeans(na.rm = TRUE)
+  
+  return(result)
+}
+
+```
+
+
+```{r}
+summary_seed1 <- map_dfr(results, ~try(meanout(.,))) %>%
+  mutate(rmse = sqrt(mse))
+summary_seed1 %>% colMeans()
+```
+
+
+
+
+
+
+
+

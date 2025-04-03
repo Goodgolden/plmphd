@@ -98,9 +98,11 @@ people_like_thee <- function(train_data,
   outcome_var <- ensym(outcome_var)
   time_var <- ensym(time_var)
   id_var <- ensym(id_var)
+  bks_fixed <- ensym(bks_fixed)
+  bks_random <- ensym(bks_random)
   ## I do not know whether there is a better way of doing this
   ## change the vector or list type into a string type
-  browser()
+
   anchor_string <- paste(anchor_time, collapse = ",")
 
   ## do not need to do the dynamic prediction for the training set
@@ -112,7 +114,7 @@ people_like_thee <- function(train_data,
     unique() %>%
     unlist()
 
-  ctl <- .makeCC("warning", tol = 1e-3)
+  ctl <- .makeCC("warning", tol = 1e-2)
   cat("\n Fitting the brokenstick model\n")
 
   ## need to rewrite this part into formula
@@ -135,6 +137,7 @@ people_like_thee <- function(train_data,
                                          optCtrl = list(method = 'nlminb'),
                                          optimizer = "optimx"),
                    data = train_data)
+  # Warning: unable to evaluate scaled gradientWarning: Model failed to converge: degenerate  Hessian with 10 negative eigenvalues
 
   ## Here is to check the singularity of the model
   ## if any turns into zero, then the model is singular
@@ -180,26 +183,29 @@ people_like_thee <- function(train_data,
   #               seed = 555)
 
   ## map the function to all individuals
-  lp_test <- map_dfc(test_baseline,
+  lp_test <- map_dfr(test_baseline,
                  ~IndvPred_lmer(lmerObject = bks_lmer,
                                 data = train_data,
                                 newdata = .,
-                                timeVar = time_var,
-                                outcomeVar = outcome_var,
-                                idVar = id_var,
+                                lmer.fixed = !!bks_fixed,
+                                lmer.random = !!bks_random,
+                                timeVar = !!time_var,
+                                outcomeVar = !!outcome_var,
+                                idVar = !!id_var,
                                 M = 500,
                                 times = anchor_time,
                                 all_times = TRUE,
                                 return_data = FALSE,
                                 level = 0.5,
                                 interval = "prediction",
-                                seed = 555)) %>%
+                                seed = 555) %>%
+                   as.data.frame()) %>%
     suppressMessages()
 
   ## change the column names, optional step
   ## in case we need to see the error acculmulation
   ## through each step in the algorithm
-  names(lp_test) <- unique(id_test)
+  # names(lp_test) <- unique(id_test)
 
   ## training outcome_vars -----------------------------------------------------
   ## the original idea is to use the IndvPred_lmer
@@ -226,7 +232,7 @@ people_like_thee <- function(train_data,
   lb_train <- expand.grid(time = anchor_time,
                           id = unique(train_data$id))
 
-  lb_train$pred <- predict(bks_nlme,
+  lb_train$pred <- predict(bks_lmer,
                           newdata = lb_train,
                           type = "response")
 
@@ -246,9 +252,11 @@ people_like_thee <- function(train_data,
     cat("\n Finding Matches with Single Time Prediction\n")}
   # save(lp_test, lb_train, file = "data-raw/lp_lb_for_plm_dyn.RData")
 
+  # browser()
   ## distance and matches finding -----------------------------
   subset <- lp_test %>%
-    map(~ dyn_match(lb_train = lb_train,
+    group_by(!!id_var) %>%
+    group_map(~ dyn_match(lb_train = lb_train,
                     lb_test_ind = .,
                     train = train_data,
                     match_methods = match_methods,
@@ -260,7 +268,7 @@ people_like_thee <- function(train_data,
                     match_time = match_time,
                     ## so far the matching plot is not available
                     ## need to think about this.
-                    match_plot = match_plot),
+                    match_plot = FALSE),
         .progress = TRUE)
 
   # if (length(test_data) > length(subset)) {
@@ -286,7 +294,7 @@ people_like_thee <- function(train_data,
                              gamlss_formula = gamlss_formula,
                              gamsigma_formula = gamlss_sigma,
                              predict_plot = predict_plot) %>%
-                suppressMessages()),
+                suppressWarnings()),
          .progress = TRUE)
 
 
@@ -304,5 +312,157 @@ people_like_thee <- function(train_data,
 
 ## 5.2 weighted dynamic-people-like-me -----------------------------------------
 
+people_like_wee <- function(train_data,
+                             test_data,
+                             new_data,
+                             outcome_var = "ht",
+                             time_var = "time",
+                             id_var = "id",
+                             tmin = 0, tmax = 17,
+                             bks_fixed = "1 + bs(time, df = 5, degree = 1) * sex",
+                             bks_random = "1 + bs(time, df = 5, degree = 1) * sex",
+                             anchor_time = c(5, 10, 15),
+                             gamlss_formula,
+                             gamlss_sigma,
+                             match_methods = c("euclidean",
+                                               "mahalanobis"),
+                             weight = TRUE,
+                             match_alpha = NULL,
+                             match_number = NULL,
+                             match_plot = FALSE,
+                             predict_plot = TRUE,
+                             ...) {
 
+  ## user defined variables ----------------------
+  outcome_var <- ensym(outcome_var)
+  time_var <- ensym(time_var)
+  id_var <- ensym(id_var)
+  bks_fixed <- ensym(bks_fixed)
+  bks_random <- ensym(bks_random)
+
+  anchor_string <- paste(anchor_time, collapse = ",")
+  id_test <- dplyr::select(test_data,
+                           !!id_var) %>%
+    unique() %>%
+    unlist()
+
+  ctl <- .makeCC("warning", tol = 1e-2)
+  cat("\n Fitting the brokenstick model\n")
+
+  bks_form <- paste0(outcome_var, "~", bks_fixed,
+                     " + ", "(", bks_random,
+                     " | ", id_var, ")")
+  bks_lmer <- lmer(bks_form,
+                   na.action = na.exclude,
+                   REML = TRUE,
+                   control = lmerControl(check.nobs.vs.nRE = "warning",
+                                         optCtrl = list(method = 'nlminb'),
+                                         optimizer = "optimx"),
+                   data = train_data)
+  # Warning: unable to evaluate scaled gradientWarning:
+  # Model failed to converge: degenerate  Hessian with 10 negative eigenvalues
+
+  ## Here is to check the singularity of the model
+  ## if any turns into zero, then the model is singular
+  ## it takes a longer time but it will work with `optimx()`
+  # summary(rePCA(bks_lmer))
+
+  cat("\n Dynamic Predicting with the brokenstick model\n")
+  test_baseline <- new_data %>%
+    group_by(!!id_var) %>%
+    group_split()
+
+  ## map the function to all individuals
+  lp_test <- map_dfr(test_baseline,
+                     ~IndvPred_lmer(lmerObject = bks_lmer,
+                                    data = train_data,
+                                    newdata = .,
+                                    lmer.fixed = !!bks_fixed,
+                                    lmer.random = !!bks_random,
+                                    timeVar = !!time_var,
+                                    outcomeVar = !!outcome_var,
+                                    idVar = !!id_var,
+                                    M = 500,
+                                    times = anchor_time,
+                                    all_times = TRUE,
+                                    return_data = FALSE,
+                                    level = 0.5,
+                                    interval = "prediction",
+                                    seed = 555) %>%
+                       as.data.frame()) %>%
+    suppressMessages()
+
+  lb_train <- expand.grid(time = anchor_time,
+                          id = unique(train_data$id))
+
+  lb_train$pred <- predict(bks_lmer,
+                           newdata = lb_train,
+                           type = "response")
+
+  lb_train <- lb_train %>%
+    pivot_wider(names_from = {{ id_var }},
+                values_from = pred) %>%
+    column_to_rownames(var = as.character({{ time_var }})) %>%
+    mutate_all(as.numeric)
+
+  ## end of 01_impute.R file ------------------------
+  # browser()
+
+  if (match_methods == "euclidean") {
+    cat("\n Finding Matches with Euclidean distance\n")}
+  if (match_methods == "mahalanobis") {
+    cat("\n Finding Matches with Mahalanobis distance\n")}
+  if (match_methods == "single") {
+    cat("\n Finding Matches with Single Time Prediction\n")}
+  # save(lp_test, lb_train, file = "data-raw/lp_lb_for_plm_dyn.RData")
+
+  # browser()
+  ## distance and matches finding -----------------------------
+  subset <- lp_test %>%
+    group_by(!!id_var) %>%
+    group_map(~ dyn_match(lb_train = lb_train,
+                          lb_test_ind = .,
+                          train = train_data,
+                          match_methods = match_methods,
+                          id_var = !!id_var,
+                          outcome_var = "pred",
+                          time_var = !!time_var,
+                          match_alpha = match_alpha,
+                          match_number = match_number,
+                          match_time = match_time,
+                          ## so far the matching plot is not available
+                          ## need to think about this.
+                          match_plot = FALSE),
+              .progress = TRUE)
+
+  cat("\n Final Prediction is almost done! \n")
+  ## final gamlss is ready ---------------------------
+  results <- test_data %>%
+    group_by(!!id_var) %>%
+    group_split() %>%
+    map2(subset,
+         ~try(predict_gamlss(matching = .y$subset,
+                             test_one = .x,
+                             id_var = !!id_var,
+                             time_var = !!time_var,
+                             outcome_var = !!outcome_var,
+                             tmin = tmin,
+                             tmax = tmax,
+                             weight = weight,
+                             gamlss_formula = gamlss_formula,
+                             gamsigma_formula = gamlss_sigma,
+                             predict_plot = predict_plot) %>%
+                suppressWarnings()),
+         .progress = TRUE)
+
+  ## attributes ready ---------------------------------
+  # attr(results, "subset") <- subset
+  # attr(results, "matching_plot") <- subset$matching_plot
+  # attr(results, "brokenstick_model") <- brokenstick
+  # attr(results, "brokenstick_impute") <- brokenstick$data_anchor
+  # attr(results, "baseline") <- brokenstick$data_baseline
+  # attr(results, "linear_model") <- summary(lm_bks)
+
+  return(results)
+}
 

@@ -12,9 +12,9 @@ knitr::opts_chunk$set(echo = TRUE,
                       error = FALSE)
 
 ## clean the R environment
-graphics.off()
-rm(list = ls())
-freshr::freshr()
+# graphics.off()
+# rm(list = ls())
+# freshr::freshr()
 
 ## load packages
 library(here, quietly = TRUE)

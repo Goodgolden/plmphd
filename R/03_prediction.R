@@ -56,6 +56,7 @@ predict_gamlss <- function(matching,
   time_var <- ensym(time_var)
   id_var <- ensym(id_var)
 
+  # browser()
   ## Here is the current setup for the weights
   ## There is a problem when we use the weights
   if (weight == FALSE) {
@@ -75,7 +76,7 @@ predict_gamlss <- function(matching,
                         sigma.formula = as.formula(gamsigma_formula),
                         # nu.formula = ~cs(time^0.1, df=1),
                         # tau.formula = ~cs(time^0.5, df=1),
-                        # weights = w,
+                        weights = pvalue,
                         method = RS(100),
                         trace = FALSE,
                         data = matching,

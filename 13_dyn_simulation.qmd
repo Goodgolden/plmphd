@@ -1,0 +1,84 @@
+---
+title: "Simulation"
+date: "2025-01-16"
+---
+
+```{r message=FALSE, warning=FALSE}
+# Load necessary library
+library(lme4, quietly = TRUE)
+library(devtools, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+load_all()
+```
+
+## Sin Simulation Pullout
+
+```{r eval=FALSE, include=FALSE}
+sin_simulation <- function(file_location, file){
+  load(paste0(file_location, file))
+
+  result1 <- map(plt4_3anchor, "centiles_observed")
+  result2 <- map(result1, ~mutate(.x, mse = bias^2) %>%
+                       dplyr::select(bias, mse, coverage50, coverage80, coverage90) %>%
+                       colMeans()) %>%
+    bind_rows() %>%
+    mutate(rmse = sqrt(mse)) %>%
+    colMeans()
+    
+  return(result2)
+}
+
+folder1 <- "data"
+folder2 <- "plt4_3anchor"
+# folder2 <- "constant_var"
+
+file_location <- paste0(folder1, "/", folder2, "/")
+files <- list.files(path = file_location, pattern = ".rda")
+files
+
+## pull out the simulation results from the folder each as a list of
+## bias, rmse, coverage50, coverage80, and coverage90
+sim_ss <- map(files, ~sin_simulation(file_location, .),
+                     .progress = list(type = "iterator",
+                                      format = "Calculating {cli::pb_bar} {cli::pb_percent}",
+                                      clear = TRUE)) 
+sim_ss1 <- bind_rows(sim_ss) 
+
+
+save(sim_ss1, file = paste0("data/13_", folder2, "_dynamic_", Sys.Date(), ".Rdata"))
+
+```
+
+```{r}
+
+load("data/13_plt0_3anchor_dynamic_2025-01-23.Rdata")
+results_plt0 <- sim_ss1 %>% as.data.frame() %>% colMeans()
+
+load("data/13_plt1_3anchor_dynamic_2025-01-23.Rdata")
+results_plt1 <- sim_ss1 %>% as.data.frame() %>% colMeans()
+
+load("data/13_plt2_3anchor_dynamic_2025-01-23.Rdata")
+results_plt2 <- sim_ss1 %>% as.data.frame() %>% colMeans()
+
+load("data/13_plt3_3anchor_dynamic_2025-01-23.Rdata")
+results_plt3 <- sim_ss1 %>% as.data.frame() %>% colMeans()
+
+load("data/13_plt4_3anchor_dynamic_2025-01-23.Rdata")
+results_plt4 <- sim_ss1 %>% as.data.frame() %>% colMeans()
+
+load("data/13_plt5_3anchor_dynamic_2025-01-23.Rdata")
+results_plt5 <- sim_ss1 %>% as.data.frame() %>% colMeans()
+
+results <- bind_rows(results_plt0, results_plt1, results_plt2,
+                     results_plt3, results_plt4, results_plt5) %>% 
+  dplyr::select(MAD = bias, RMSE = rmse, 
+                Coverage50 = coverage50, 
+                Coverage80 = coverage80,
+                Coverage90 = coverage90) 
+
+library(xtable)
+xtable(results, type = "latex", digits = 4)
+
+print(xtable(results, type = "latex"),
+      file = paste0("data/13_simulation_dynamic_summary.tex"))
+```
