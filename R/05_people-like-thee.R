@@ -79,7 +79,7 @@ people_like_thee <- function(train_data,
                             outcome_var = "ht",
                             time_var = "time",
                             id_var = "id",
-                            tmin = 0, tmax = 17,
+                            tmin = 0, tmax = 20,
                             bks_fixed = "1 + bs(time, df = 5, degree = 1) * sex",
                             bks_random = "1 + bs(time, df = 5, degree = 1) * sex",
                             anchor_time = c(5, 10, 15),
@@ -277,14 +277,14 @@ people_like_thee <- function(train_data,
   #   plm_plot <- NULL
   # }
 
-  cat("\n Final Prediction is almost done! \n")
+cat("\n Final Prediction is almost done! \n")
   ## final gamlss is ready ---------------------------
   results <- test_data %>%
     group_by(!!id_var) %>%
     group_split() %>%
     map2(subset,
            ~try(predict_gamlss(matching = .y$subset,
-                             test_one = .x,
+                             test_one = .x %>% filter(!!time_var > tmin),
                              id_var = !!id_var,
                              time_var = !!time_var,
                              outcome_var = !!outcome_var,
@@ -301,7 +301,7 @@ people_like_thee <- function(train_data,
   ## attributes ready ---------------------------------
   attr(results, "subset") <- subset
   # attr(results, "matching_plot") <- subset$matching_plot
-  attr(results, "brokenstick_model") <- brokenstick
+  # attr(results, "brokenstick_model") <- brokenstick
   # attr(results, "brokenstick_impute") <- brokenstick$data_anchor
   # attr(results, "baseline") <- brokenstick$data_baseline
   # attr(results, "linear_model") <- summary(lm_bks)
@@ -318,7 +318,7 @@ people_like_wee <- function(train_data,
                              outcome_var = "ht",
                              time_var = "time",
                              id_var = "id",
-                             tmin = 0, tmax = 17,
+                             tmin = 0, tmax = 20,
                              bks_fixed = "1 + bs(time, df = 5, degree = 1) * sex",
                              bks_random = "1 + bs(time, df = 5, degree = 1) * sex",
                              anchor_time = c(5, 10, 15),

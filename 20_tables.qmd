@@ -1,0 +1,73 @@
+---
+title: "Final Tables"
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+            warnings = FALSE,
+            message = FALSE,
+            comment = "#>",
+            #results = "hide",
+            digits = 4,
+            error = FALSE)
+
+## load packages
+library(here, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+library(gtsummary, quietly = TRUE)
+library(flextable, quietly = TRUE)
+## check the directory for the file
+# here::dr_here()
+here::set_here()
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+```
+
+```{css, echo=FALSE}
+.scroll-100 {
+  max-height: 300px;
+  max-width: 1000px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+```{r, class.output="scroll-100"}
+load("results/M16_nogender_m0.95_plt12345_3anchor_4anchor.rda")
+
+tma_095 <- Ma0.95 %>% 
+  mutate(anchor = rep(c("t(6, 9, 12)", "t(6, 8, 10, 12)"), each = 6),
+         time = rep(c("baseline", "1 year", "2 year", "3 year", "4 year", "5 year"), 2),
+         alpha = "a0.95") %>%
+  dplyr::select(alpha, anchor, time, bias, rmse, everything()) 
+
+load("results/M16_nogender_m0.90_plt12345_3anchor_4anchor.rda")
+tma_090 <- Ma0.90 %>% 
+  mutate(anchor = rep(c("t(6, 9, 12)", "t(6, 8, 10, 12)"), each = 6),
+         time = rep(c("baseline", "1 year", "2 year", "3 year", "4 year", "5 year"), 2),
+         alpha = "a0.90") %>%
+  dplyr::select(alpha, anchor, time, bias, rmse, everything()) 
+
+load("results/M16_nogender_m0.85_plt12345_3anchor_4anchor.rda")
+tma_085 <- Ma0.85 %>% dplyr::select(- V1) %>%
+  mutate(anchor = rep(c("t(6, 9, 12)", "t(6, 8, 10, 12)"), each = 6),
+         time = rep(c("baseline", "1 year", "2 year", "3 year", "4 year", "5 year"), 2),
+         alpha = "a0.80") %>%
+  dplyr::select(alpha, anchor, time, bias, rmse, everything()) 
+
+tma <- rbind(tma_085, tma_090, tma_095) 
+
+```
+
+
+```{r}
+library(xtable)
+xtable(tma)
+```
+
+
+
+
+

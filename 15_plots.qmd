@@ -1,0 +1,547 @@
+---
+title: "Plots"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+            warnings = FALSE,
+            message = FALSE,
+            comment = "#>",
+            #results = "hide",
+            digits = 4,
+            error = FALSE)
+## clean the R environment
+## load packages
+library(here, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+devtools::load_all()
+## check the directory for the file
+# here::dr_here()
+here::set_here()
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+```
+
+```{css, echo=FALSE}
+.scroll-100 {
+  max-height: 300px;
+  max-width: 1000px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+
+## Plots
+
+```{r}
+## 5.1 dynamic-people-like-me --------------------------------------------------
+people_like_thee <- function(train_data,
+                             test_data,
+                             new_data,
+                             outcome_var = "ht",
+                             time_var = "time",
+                             id_var = "id",
+                             tmin = 0, tmax = 17,
+                             bks_fixed = "1 + bs(time, df = 5, degree = 1) * sex",
+                             bks_random = "1 + bs(time, df = 5, degree = 1)",
+                             anchor_time = c(5, 10, 15),
+                             gamlss_formula,
+                             gamlss_sigma,
+                             match_methods = c("euclidean",
+                                               "mahalanobis"),
+                             weight = FALSE,
+                             match_alpha = NULL,
+                             match_number = NULL,
+                             match_plot = TRUE,
+                             predict_plot = TRUE,
+                             ...) {
+  ## user defined variables ----------------------
+  outcome_var <- ensym(outcome_var)
+  time_var <- ensym(time_var)
+  id_var <- ensym(id_var)
+  bks_fixed <- ensym(bks_fixed)
+  bks_random <- ensym(bks_random)
+  anchor_string <- paste(anchor_time, collapse = ",")
+  id_test <- dplyr::select(test_data,
+                           !!id_var) %>%
+    unique() %>% unlist()
+
+  ctl <- .makeCC("warning", tol = 1e-2)
+  cat("\n Fitting the brokenstick model\n")
+
+  bks_form <- paste0(outcome_var, "~", bks_fixed,
+                     " + ", "(", bks_random,
+                     " | ", id_var, ")")
+  bks_lmer <- lmer(bks_form,
+                   na.action = na.exclude,
+                   REML = TRUE,
+                   control = lmerControl(check.nobs.vs.nRE = "warning",
+                                         optCtrl = list(method = 'nlminb'),
+                                         optimizer = "optimx"),
+                   data = train_data)
+
+  cat("\n Dynamic Predicting with the brokenstick model\n")
+
+
+  test_baseline <- new_data %>%
+    group_by(!!id_var) %>%
+    group_split()
+  lp_test <- map_dfr(test_baseline,
+                     ~IndvPred_lmer(lmerObject = bks_lmer,
+                                    data = train_data,
+                                    newdata = .,
+                                    lmer.fixed = !!bks_fixed,
+                                    lmer.random = !!bks_random,
+                                    timeVar = !!time_var,
+                                    outcomeVar = !!outcome_var,
+                                    idVar = !!id_var,
+                                    M = 500,
+                                    times = anchor_time,
+                                    all_times = TRUE,
+                                    return_data = FALSE,
+                                    level = 0.5,
+                                    interval = "prediction",
+                                    seed = 555) %>%
+                       as.data.frame()) %>%
+    suppressMessages()
+
+  cat("\n lp_test done\n")
+  lb_train <- expand.grid(time = anchor_time,
+                          id = unique(train_data$id)) %>%
+    left_join(train_data %>% dplyr::select(id, sex), by = c("id")) %>%
+    unique()
+
+  lb_train$pred <- predict(bks_lmer,
+                           newdata = lb_train,
+                           type = "response")
+
+  ## does not work ------------------------------------------------
+  lb_train <- lb_train %>%
+    dplyr::select(-sex) %>%
+    pivot_wider(names_from = {{ id_var }},
+                values_from = pred) %>%
+    column_to_rownames(var = as.character({{ time_var }})) %>%
+    mutate_all(as.numeric)
+  if (match_methods == "euclidean") {
+    cat("\n Finding Matches with Euclidean distance\n")}
+  if (match_methods == "mahalanobis") {
+    cat("\n Finding Matches with Mahalanobis distance\n")}
+  if (match_methods == "single") {
+    cat("\n Finding Matches with Single Time Prediction\n")}
+  subset <- lp_test %>%
+    group_by(!!id_var) %>%
+    group_map(~ dyn_match(lb_train = lb_train,
+                          lb_test_ind = .,
+                          train = train_data,
+                          match_methods = match_methods,
+                          id_var = !!id_var,
+                          outcome_var = "pred",
+                          time_var = !!time_var,
+                          match_alpha = match_alpha,
+                          match_number = match_number,
+                          match_time = match_time,
+                          match_plot = FALSE),
+              .progress = TRUE)
+  cat("\n Final Prediction is almost done! \n")
+
+  ## final gamlss is ready ---------------------------
+  results <- test_data %>%
+    group_by(!!id_var) %>%
+    group_split() %>%
+    map2(subset,
+         ~try(predict_gamlss(matching = .y$subset,
+                             test_one = .x %>% filter(!!time_var > tmin),
+                             id_var = !!id_var,
+                             time_var = !!time_var,
+                             outcome_var = !!outcome_var,
+                             tmin = tmin,
+                             tmax = tmax,
+                             weight = weight,
+                             gamlss_formula = gamlss_formula,
+                             gamsigma_formula = gamlss_sigma,
+                             predict_plot = predict_plot) %>%
+                suppressWarnings()),
+         .progress = TRUE)
+
+  return(results)
+}
+
+
+## 11.2 IndvPred_lmer ----------------------------------------------------------
+
+IndvPred_lmer <- function (lmerObject,
+                           data,
+                           newdata,
+                           timeVar,
+                           outcomeVar,
+                           idVar,
+                           times = NULL,
+                           lmer.fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                           lmer.random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                           M = 200L,
+                           interval = c("confidence", "prediction"),
+                           all_times = TRUE,
+                           level = 0.95,
+                           return_data = TRUE,
+                           seed = 1L,
+                           ...) {
+  interval <- match.arg(interval)
+  call <- match.call()
+  timeVar <- ensym(timeVar)
+  outcomeVar <- ensym(outcomeVar)
+  lmer.fixed  <- ensym(lmer.fixed)
+  lmer.random  <- ensym(lmer.random)
+  idVar <- ensym(idVar)
+
+    ## extract data.matrix info from lmerObject
+    lfixed <- paste0(outcomeVar, "~", lmer.fixed)
+    formYx <- formula(lfixed,
+                      fixed.only = TRUE)
+    ## below are the design matrix
+    mfX <- model.frame(terms(formYx),
+                       data = data)
+    TermsX <- attr(mfX, "terms")
+
+    lrandom <- paste0(outcomeVar, "~", lmer.random)
+    formYz <- formula(lrandom,
+                      fixed.only = TRUE)
+
+    mfZ <- model.frame(terms(formYz),
+                       data = data)
+    TermsZ <- attr(mfZ, "terms")
+
+    ## extract fixed and random effects
+    idVar <- names(lmerObject@cnms)
+    betas <- fixef(lmerObject)
+    # betas
+    sigma <- sigma(lmerObject)
+    # sigma
+    V <- vcov(lmerObject)
+    D <- (VarCorr(lmerObject))
+    D <- as.matrix(Matrix::bdiag(D))
+
+    ## extract time and newdata
+    times_orig <- data[[timeVar]]
+    times_orig <- times_orig[!is.na(times_orig)]
+
+  ## rebuild for the new
+  all_vars <- unique(c(all.vars(TermsX),
+                       all.vars(TermsZ)))
+  ## remove the missing values
+  ## Mon Apr 22 09:49:17 2024 --------------------------------------------------
+  ## better just use the complete dataset at the first step
+  newdata_nomiss <- newdata[complete.cases(newdata[all_vars]), ]
+  ## build new data.frame for prediction
+  mfX_new0 <- model.frame(TermsX,
+                          data = newdata_nomiss)
+  mfX_gender <- mfX_new0$sex
+  mfx_gender_bi <- ifelse(mfX_new0$sex == "F", 0, 1)
+  c_gender_bi <- 1 - mfx_gender_bi
+  c_gender <- ifelse(c_gender_bi == 1, "M", "F")
+
+  mfX_new <- mfX_new0 %>%
+    mutate(sex = c_gender) %>%
+    bind_rows(mfX_new0)
+
+  X_new <- model.matrix(formYx,
+                        mfX_new) %>%
+    as.data.frame() %>%
+    filter(sexM == mfx_gender_bi) %>%
+    as.matrix()
+
+  mfZ_new <- model.frame(TermsZ,
+                         data = newdata_nomiss)
+  Z_new <- model.matrix(formYz,
+                        mfZ_new)
+  na_ind <- attr(mfX_new0, "na.action")
+  y_new <- model.response(mfX_new0,
+                          "numeric")
+
+  if (length(idVar) > 1)
+    stop("the current version of the function only works
+         with a single grouping variable.\n")
+  if (is.null(newdata[[idVar]]))
+    stop("subject id variable not in newdata.\n")
+  newdata_nomiss[[idVar]] <- as.factor(newdata_nomiss[[idVar]])
+  # id_nomiss <- unique(newdata_nomiss[[idVar]])
+  id_nomiss <- base::match(newdata_nomiss[[idVar]],
+                           unique(newdata_nomiss[[idVar]]))
+  n <- length(unique(id_nomiss))
+  modes <- matrix(0, n, ncol(Z_new))
+  post_vars <- DZtVinv <- vector("list", n)
+
+  for (i in seq_len(n)) {
+    id_i <- id_nomiss == i
+    X_new_id <- X_new[id_i, , drop = FALSE]
+    Z_new_id <- Z_new[id_i, , drop = FALSE]
+    Vi_inv <- solve(Z_new_id %*% tcrossprod(D, Z_new_id) + sigma^2 * diag(sum(id_i)))
+    DZtVinv[[i]] <- tcrossprod(D, Z_new_id) %*% Vi_inv
+    modes[i, ] <- c(DZtVinv[[i]] %*% (y_new[id_i] - X_new_id %*% betas))
+    t1 <- DZtVinv[[i]] %*% Z_new_id %*% D
+    t2 <- DZtVinv[[i]] %*% X_new_id %*% V %*%
+      crossprod(X_new_id, Vi_inv) %*% Z_new_id %*% D
+    post_vars[[i]] <- D - t1 + t2
+  }
+  fitted_y <- c(X_new %*% betas) +
+    rowSums(Z_new %*% t(modes[id_nomiss, , drop = FALSE]))
+
+  if (is.null(times) || !is.numeric(times)) {
+    times <- seq(min(times_orig),
+                 max(times_orig),
+                 length.out = 100)
+  }
+  id <- unique(newdata[[idVar]])
+  newdata$time <- newdata[[timeVar]]
+  last_time <- newdata %>%
+    group_by(!!sym(idVar)) %>%
+    summarize(last_time = max(time)) %>%
+    dplyr::select(last_time) %>%
+    unlist()
+
+  times_to_pred <- lapply(last_time,
+                          function(t) if (all_times)
+                            times
+                          else times[times > t])
+
+  id_pred <- rep(seq_len(n), sapply(times_to_pred, length))
+
+  right_rows <- function(data, times, ids, Q_points) {
+    fids <- factor(ids, levels = unique(ids))
+    if (!is.list(Q_points))
+      Q_points <- base::split(Q_points, row(Q_points))
+    bst1 <- split(newdata, newdata$id) %>%
+      map("time")
+    ind <- mapply(findInterval, Q_points, bst1)
+    ind[ind < 1] <- 1
+    rownams_id <- split(row.names(data), newdata$id)
+    ind <- mapply(`[`, rownams_id, split(ind, col(ind)))
+    data[c(ind), ]
+  }
+
+
+  newdata_pred <- right_rows(newdata, newdata[[timeVar]],
+                             id, times_to_pred)
+
+  newdata_pred[[timeVar]] <- unlist(times_to_pred)
+  newdata_pred0 <- newdata_pred %>%
+    mutate(sex = unique(c_gender)) %>%
+    bind_rows(newdata_pred)
+  mfX_new_pred <- model.frame(TermsX,
+                              data = newdata_pred0,
+                              na.action = NULL)
+
+  X_new_pred <- model.matrix(formYx, mfX_new_pred) %>%
+    as.data.frame() %>%
+    filter(sexM == unique(mfx_gender_bi)) %>%
+    as.matrix()
+  mfZ_new_pred <- model.frame(TermsZ,
+                              data = newdata_pred,
+                              na.action = NULL)
+  Z_new_pred <- model.matrix(formYz, mfZ_new_pred)
+
+  predicted_y <- c(X_new_pred %*% betas) +
+    rowSums(Z_new_pred * modes[id_pred, , drop = FALSE])
+
+
+  set.seed(seed)
+  betas_M <- MASS::mvrnorm(M, betas, V)
+  modes_fun <- function (betas) {
+    t(mapply("%*%", DZtVinv, split(y_new - X_new %*% betas, id_nomiss)))
+  }
+  modes_M <- lapply(split(betas_M, row(betas_M)), modes_fun)
+  matrix_row <- function (m, i) m[i, , drop = FALSE]
+  modes_M <- lapply(seq_len(n), function (i) t(sapply(modes_M, matrix_row, i = i)))
+  b_M <- modes_M
+  for (i in seq_len(n)) {
+    b_M[[i]] <- t(apply(modes_M[[i]], 1, MASS::mvrnorm, n = 1, Sigma = post_vars[[i]]))
+  }
+
+  n_pred <- length(predicted_y)
+  sampled_y <- matrix(0, n_pred, M)
+
+  for (m in seq_len(M)) {
+    betas_m <- betas_M[m, ]
+    b_m <- t(sapply(b_M,
+                    function(x) x[m, ]))
+    mean_m <- c(X_new_pred %*% betas_m) +
+      rowSums(Z_new_pred * b_m[id_pred, ,
+                               drop = FALSE])
+    sampled_y[, m] <- if (interval == "confidence")
+      mean_m
+    else rnorm(n_pred, mean_m,
+               sigma(lmerObject))
+  }
+
+  low <- apply(sampled_y,
+               1,
+               quantile,
+               probs = (1 - level) / 2)
+  upp <- apply(sampled_y,
+               1,
+               quantile,
+               probs = 1 - (1 - level) / 2)
+  rm(list = ".Random.seed",
+     envir = globalenv())
+  if (!return_data) {
+    out_data <- cbind(
+      id = rep(unique(newdata_pred[[idVar]]),
+               each = length(times)),
+      time = times,
+      predicted_y = predicted_y
+    )
+  } else {
+    out_data <- rbind(newdata,
+                      newdata_pred)
+    out_data$pred <- c(fitted_y,
+                       predicted_y)
+    out_data$low <- c(rep(NA, length(fitted_y)),
+                      low)
+    out_data$upp <- c(rep(NA, length(fitted_y)),
+                      upp)
+    out_data[order(out_data[[idVar]],
+                   out_data[[timeVar]]), ]
+  }
+
+  return(out_data)
+}
+
+
+```
+
+
+
+```{r}
+set.seed(555)
+## 12.2 meanout -----------------------------------------------------------------
+meanout <- function(dataset,
+                    term = c("bias", "mse", "coverage50",
+                             "coverage80", "coverage90"),
+                    ...){
+  result <- dataset$centiles_observed %>%
+    mutate(mse = bias^2) %>%
+    dplyr::select(bias, mse, coverage50, coverage80, coverage90) %>%
+    colMeans(na.rm = TRUE)
+
+  return(result)
+}
+
+plt_sum <- function(plt_anchor) {
+  plt <- map(plt_anchor, ~try(meanout(.,))) %>%
+    map(~ (if (inherits(., "try-error")) NA else .)) %>%
+    map(~ as.data.frame(t(.))) %>%
+    bind_rows() %>%
+    mutate(rmse = sqrt(mse)) %>%
+    colMeans(na.rm = TRUE)
+
+  return(plt)
+}
+
+## simulate data -------------------------------------------------------------
+Nid <- rpois(20000, 20)
+Ntime <- map(Nid, ~rnorm(.x, 0.8, 0.3) %>%
+               abs() %>%
+               as.data.frame())
+
+data0 <- cbind(id = 1:20000,
+               group = rep(c("training", "testing"), by = 10000),
+               gap = Ntime,
+               sex = rep(c("M", "F"), each = 10000)) %>%
+  as.data.frame() %>%
+  mutate(hmax = c(rnorm(10000, 175, 10),
+                  rnorm(10000, 160, 11)),
+         hd = c(rnorm(10000, 20, 4),
+                rnorm(10000, 20, 6.5)),
+         rate = runif(20000, 5.8, 11),
+         s1 = c(abs(rnorm(10000, 0.85, 0.1)),
+                abs(rnorm(10000, 0.75, 0.1))),
+         theta = c(runif(10000, 11, 17),
+                   runif(10000, 10, 15))) %>%
+  mutate(s0 = s1 / rate,
+         h3 = hmax - 2 * hd / (exp(s0 *(3 - theta)) + exp(s1 * (3 - theta))),
+         h10 = hmax - 2 * hd/ (exp(s0 *(10 - theta)) + exp(s1 * (10 - theta))),
+         h20 = hmax - 2 * hd / (exp(s0 *(20 - theta)) + exp(s1 * (20 - theta))),
+         sex = unlist(sex),
+         group = unlist(group),
+         id = as.character(unlist(id))) %>%
+  filter(h3 > 80,
+         h3 < 106,
+         hd > 15,
+         h10 > 100) %>%
+  group_by(group, sex) %>%
+  slice_sample(n = 300L) %>%
+  ungroup()
+
+simulation <- data0 %>%
+  unnest(gap) %>%
+  dplyr::select(gap = 3, everything()) %>%
+  group_by(id) %>%
+  mutate(time = lag(cumsum(gap), default = 0) + 3) %>%
+  ungroup() %>%
+  filter(time <= 20) %>%
+  mutate(resid = rnorm(n(), 0, 1),
+         ht = hmax - 2 * hd /
+           (exp(s0 *(time - theta)) + exp(s1 * (time - theta))) + resid) %>%
+  as.data.frame() %>%
+  mutate(time1 = as.numeric(time)) %>%
+  mutate(time = round(time1, 1)) %>%
+  dplyr::select(ht, id, sex, time, group)
+
+train <- dplyr::filter(simulation, group == "training")
+test <- dplyr::filter(simulation, group == "testing")
+test_id <- unique(test$id)
+test <- test %>% filter(id %in% test_id[1:300])
+test_base <- test %>%  group_by(id) %>% slice(1L) %>% ungroup()
+id_test <- unique(test$id)
+
+```
+
+```{r}
+
+plt0_3anchor <- people_like_thee(train_data = train,
+                                 test_data = test,
+                                 new_data = test_base,
+                                 outcome_var = "ht",
+                                 time_var = "time",
+                                 id_var = "id",
+                                 tmin = 3, tmax = 20,
+                                 bks_fixed = "1 + bs(time, knots = c(6, 9, 12, 15), degree = 1) * sex",
+                                 bks_random = "1 + bs(time, knots = c(6, 9, 12, 15), degree = 1)",
+                                 anchor_time = c(4, 8, 10, 13),
+                                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                                 gamlss_sigma = "~ cs(time, df = 1)",
+                                 match_methods = "mahalanobis",
+                                 weight = FALSE,
+                                 match_alpha = 0.95,
+                                 match_plot = TRUE,
+                                 predict_plot = TRUE)
+
+
+plt0_3anchor[1:10]
+
+
+plt3_3anchor <- people_like_thee(train_data = train,
+                                 test_data = test,
+                                 new_data = test %>%
+                                   filter(time <= 3 + 3) %>%
+                                   group_by(id),
+                                 outcome_var = "ht",
+                                 time_var = "time",
+                                 id_var = "id",
+                                 tmin = 6, tmax = 20,
+                                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                                 anchor_time = c(4, 8, 10, 13),
+                                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                                 gamlss_sigma = "~ cs(time, df = 1)",
+                                 match_methods = "mahalanobis",
+                                 weight = FALSE,
+                                 match_alpha = 0.975,
+                                 match_number = NULL,
+                                 match_plot = FALSE,
+                                 predict_plot = TRUE)
+
+plt3_3anchor[10:30]
+```
+

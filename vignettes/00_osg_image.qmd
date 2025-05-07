@@ -1,26 +1,86 @@
 ---
 title: "00_osg_image"
-format: html
-editor: visual
+editor: source
 ---
 
-## Quarto
+## SSH 
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+ssh goodgolden_555@ap21.uc.osg-htc.org
 
-## Running Code
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
 
-```{r}
-1 + 1
+```{bash}
+cat ~/.ssh
 ```
 
-You can add options to executable code like this
 
-```{r}
-#| echo: false
-2 * 2
+
+```{bash}
+mkdir $HOME/tmp
+export TMPDIR=$HOME/tmp
+export APPTAINER_TMPDIR=$HOME/tmp
+export APPTAINER_CACHEDIR=$HOME/tmp
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+
+```
+Bootstrap: docker
+From: rocker/r-ver:4.3.1
+
+%post
+    R -e "install.packages(c('cowsay','fortunes'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
+```
+
+```         
++SingularityImage = "/cvmfs/singularity.opensciencegrid.org/goodgolden5/randy:7.0"
+```
+
+- [x] apptainer build my-container.sif image.def
+- [0] apptainer build randy-container0.sif image.def
+
+
+
+```
+c('lme4', 'JMbayes2', 'JMbayes', 'brokenstick', 'optimx', 'broom.mixed', 'gamlss', 'nlme', 'optimx', 'MASS', 'matrixcalc', 'splines', 'tibble', 'tidyverse')
+```
+
+```
+osdf:///ospool/ap21/data/goodgolden_555/my-container.sif
+```
+
+do not put the same name sif over there and always rename it. 
+
+```
+cp ./my-container.sif /ospool/ap21/data/goodgolden5/my-container.sif
+```
+
+
+```
+rsync -a goodgolden_555\@ap21.uc.osg-htc.org:/home/goodgolden_555/dyn_results results/results
+```
+
+
+
+## Submit files
+
+executable              = dyn.sh
+arguments               = $(Process)
+transfer_input_files    = dyn.R
+should_transfer_files   = Yes
+when_to_transfer_output = ON_EXIT
+
+output                  = dyn_output/job.$(Cluster).$(Process).out
+error                   = dyn_error/job.$(Cluster).$(Process).error
+log                     = dyn_logs/job.$(Cluster).$(Process).log
+
++SingularityImage       = "osdf:///ospool/ap21/data/goodgolden_555/my-container.sif"
+
+request_cpus            = 1
+request_memory          = 10GB
+request_disk            = 10GB
+
+transfer_output_remaps  = "randy_simulation_result.Rdata = /home/goodgolden_555/dyn_results/job.$(Cluster).$(Process).Rdata"
+JobDurationCategory     = "Long"
+
+queue 1200
+

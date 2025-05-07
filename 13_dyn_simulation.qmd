@@ -16,69 +16,86 @@ load_all()
 ```{r eval=FALSE, include=FALSE}
 sin_simulation <- function(file_location, file){
   load(paste0(file_location, file))
-
-  result1 <- map(plt4_3anchor, "centiles_observed")
-  result2 <- map(result1, ~mutate(.x, mse = bias^2) %>%
-                       dplyr::select(bias, mse, coverage50, coverage80, coverage90) %>%
-                       colMeans()) %>%
-    bind_rows() %>%
-    mutate(rmse = sqrt(mse)) %>%
-    colMeans()
-    
-  return(result2)
+  Ma080 <- Ma080 %>%
+    mutate(time = c(0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5),
+           anchor = rep(c(3, 4), each = 6),
+           methods = "Ma080") %>%
+    dplyr::select(methods, anchor, time, bias, rmse, 
+           coverage50, coverage80, coverage90)
+  Ma090 <- Ma090 %>%
+    mutate(time = c(0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5),
+           anchor = rep(c(3, 4), each = 6),
+           methods = "Ma090") %>%
+    dplyr::select(methods, anchor, time, bias, rmse, 
+           coverage50, coverage80, coverage90)
+  Ma095 <- Ma095 %>%
+    mutate(time = c(0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5),
+           anchor = rep(c(3, 4), each = 6),
+           methods = "Ma095") %>%
+    dplyr::select(methods, anchor, time, bias, rmse, 
+           coverage50, coverage80, coverage90)
+  Mn20 <- Mn20 %>%
+    mutate(time = c(0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5),
+           anchor = rep(c(3, 4), each = 6),
+           methods = "Mn20") %>%
+    dplyr::select(methods, anchor, time, bias, rmse, 
+           coverage50, coverage80, coverage90)
+  Mn25 <- Mn25 %>%
+    mutate(time = c(0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5),
+           anchor = rep(c(3, 4), each = 6),
+           methods = "Mn25") %>%
+    dplyr::select(methods, anchor, time, bias, rmse, 
+           coverage50, coverage80, coverage90)
+  Mn30 <- Mn30 %>% 
+    mutate(time = c(0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5),
+           anchor = rep(c(3, 4), each = 6),
+           methods = "Mn30") %>%
+    dplyr::select(methods, anchor, time, bias, rmse, 
+           coverage50, coverage80, coverage90)
+  
+  results <- bind_rows(Ma080 = Ma080,
+                       Ma090 = Ma090,
+                       Ma095 = Ma095,
+                       Mn20 = Mn20,
+                       Mn25 = Mn25,
+                       Mn30 = Mn30)
 }
 
-folder1 <- "data"
-folder2 <- "plt4_3anchor"
+folder1 <- "results"
+folder2 <- "dyn_results_gender"
 # folder2 <- "constant_var"
 
 file_location <- paste0(folder1, "/", folder2, "/")
-files <- list.files(path = file_location, pattern = ".rda")
-files
+files <- list.files(path = file_location, pattern = ".Rdata")
 
 ## pull out the simulation results from the folder each as a list of
 ## bias, rmse, coverage50, coverage80, and coverage90
 sim_ss <- map(files, ~sin_simulation(file_location, .),
                      .progress = list(type = "iterator",
                                       format = "Calculating {cli::pb_bar} {cli::pb_percent}",
-                                      clear = TRUE)) 
-sim_ss1 <- bind_rows(sim_ss) 
+                                      clear = TRUE)) %>% bind_rows() 
+final_names <- sim_ss %>% 
+  group_by(methods, anchor, time) %>% 
+  summarize(n = n()) 
 
-
-save(sim_ss1, file = paste0("data/13_", folder2, "_dynamic_", Sys.Date(), ".Rdata"))
-
-```
-
-```{r}
-
-load("data/13_plt0_3anchor_dynamic_2025-01-23.Rdata")
-results_plt0 <- sim_ss1 %>% as.data.frame() %>% colMeans()
-
-load("data/13_plt1_3anchor_dynamic_2025-01-23.Rdata")
-results_plt1 <- sim_ss1 %>% as.data.frame() %>% colMeans()
-
-load("data/13_plt2_3anchor_dynamic_2025-01-23.Rdata")
-results_plt2 <- sim_ss1 %>% as.data.frame() %>% colMeans()
-
-load("data/13_plt3_3anchor_dynamic_2025-01-23.Rdata")
-results_plt3 <- sim_ss1 %>% as.data.frame() %>% colMeans()
-
-load("data/13_plt4_3anchor_dynamic_2025-01-23.Rdata")
-results_plt4 <- sim_ss1 %>% as.data.frame() %>% colMeans()
-
-load("data/13_plt5_3anchor_dynamic_2025-01-23.Rdata")
-results_plt5 <- sim_ss1 %>% as.data.frame() %>% colMeans()
-
-results <- bind_rows(results_plt0, results_plt1, results_plt2,
-                     results_plt3, results_plt4, results_plt5) %>% 
-  dplyr::select(MAD = bias, RMSE = rmse, 
-                Coverage50 = coverage50, 
-                Coverage80 = coverage80,
-                Coverage90 = coverage90) 
+final_ss1 <- sim_ss %>% 
+  group_by(methods, anchor, time) %>% 
+  group_map(~colMeans(.x, na.rm = TRUE) %>% 
+              as.data.frame()) %>%
+  bind_cols() %>%
+  t() %>%
+  as.data.frame() %>%
+  cbind(final_names) %>%
+  filter(anchor == 4) %>% 
+  dplyr::select(-n) %>%
+  dplyr::select(anchor, methods, time, everything()) %>%
+  mutate(anchor = "t(4, 8, 12, 16)",
+         time = rep(c("baseline", "1 year", "2 year", "3 year", "4 year", "5 year"), 6))
 
 library(xtable)
-xtable(results, type = "latex", digits = 4)
-
-print(xtable(results, type = "latex"),
-      file = paste0("data/13_simulation_dynamic_summary.tex"))
+xtable(final_ss1)
+print(xtable(final_ss1), file = "tables/T13_4anchor_481216_simulation_with_gender.tex")
 ```
+
+
+rsync -a goodgolden_555\@ap21.uc.osg-htc.org:/home/goodgolden_555/dyn_results results

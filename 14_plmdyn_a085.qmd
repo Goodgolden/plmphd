@@ -1,0 +1,319 @@
+---
+title: "PLM Dynamic Prediction Simulation"
+format: html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+            warnings = FALSE,
+            message = FALSE,
+            comment = "#>",
+            #results = "hide",
+            digits = 4,
+            error = FALSE)
+## load packages
+library(here, quietly = TRUE)
+library(tidyverse, quietly = TRUE)
+library(gtsummary, quietly = TRUE)
+library(flextable, quietly = TRUE)
+## check the directory for the file
+# here::dr_here()
+# here::set_here()
+## the figure or results should be saved 
+# paste0("foldername/Sfilename_workingresult_", 
+#      Sys.Date(), ".filetype")
+devtools::load_all()
+```
+
+
+## Dynamic PLM $M_{\alpha = 0.85}$
+
+```{r}
+#| include: false
+#| eval: false
+
+set.seed(2025)
+
+plt0_3anchor <- people_like_thee2(train_data = train,
+                 test_data = test,
+                 new_data = test %>% group_by(id) %>% slice(1L),
+                 outcome_var = "ht",
+                 time_var = "time",
+                 id_var = "id",
+                 tmin = 0, tmax = 20,
+                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                 anchor_time = c(6, 9, 12),
+                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                 gamlss_sigma = "~ cs(time, df = 1)",
+                 match_methods = "mahalanobis",
+                 weight = FALSE,
+                 match_alpha = 0.85,
+                 # match_number = 30,
+                 match_plot = FALSE,
+                 predict_plot = FALSE)
+
+plt1_3anchor <- people_like_thee2(train_data = train,
+                 test_data = test,
+                 new_data = test %>% filter(time <= 1) %>% group_by(id),
+                 outcome_var = "ht",
+                 time_var = "time",
+                 id_var = "id",
+                 tmin = 1, tmax = 20,
+                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                 anchor_time = c(6, 9, 12),
+                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                 gamlss_sigma = "~ cs(time, df = 1)",
+                 match_methods = "mahalanobis",
+                 weight = FALSE,
+                 match_alpha = 0.85,
+                 # match_number = 30,
+                 match_plot = FALSE,
+                 predict_plot = FALSE)
+
+plt2_3anchor <- people_like_thee2(train_data = train,
+                 test_data = test,
+                 new_data = test %>% filter(time <= 2) %>% group_by(id),
+                 outcome_var = "ht",
+                 time_var = "time",
+                 id_var = "id",
+                 tmin = 2, tmax = 20,
+                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                 anchor_time = c(6, 9, 12),
+                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                 gamlss_sigma = "~ cs(time, df = 1)",
+                 match_methods = "mahalanobis",
+                 weight = FALSE,
+                 match_alpha = 0.85,
+                 # match_number = 30,
+                 match_plot = FALSE,
+                 predict_plot = FALSE)
+
+plt3_3anchor <- people_like_thee2(train_data = train,
+                 test_data = test,
+                 new_data = test %>% filter(time <= 3) %>% group_by(id),
+                 outcome_var = "ht",
+                 time_var = "time",
+                 id_var = "id",
+                 tmin = 3, tmax = 20,
+                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                 anchor_time = c(6, 9, 12),
+                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                 gamlss_sigma = "~ cs(time, df = 1)",
+                 match_methods = "mahalanobis",
+                 weight = FALSE,
+                 match_alpha = 0.85,
+                 # match_number = 30,
+                 match_plot = FALSE,
+                 predict_plot = FALSE)
+
+plt4_3anchor <- people_like_thee2(train_data = train,
+                 test_data = test,
+                 new_data = test %>% filter(time <= 4) %>% group_by(id),
+                 outcome_var = "ht",
+                 time_var = "time",
+                 id_var = "id",
+                 tmin = 4, tmax = 20,
+                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                 anchor_time = c(6, 9, 12),
+                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                 gamlss_sigma = "~ cs(time, df = 1)",
+                 match_methods = "mahalanobis",
+                 weight = FALSE,
+                 match_alpha = 0.85,
+                 # match_number = 30,
+                 match_plot = FALSE,
+                 predict_plot = FALSE)
+
+
+plt5_4anchor <- people_like_thee2(train_data = train,
+                 test_data = test,
+                 new_data = test %>% filter(time <= 5) %>% group_by(id),
+                 outcome_var = "ht",
+                 time_var = "time",
+                 id_var = "id",
+                 tmin = 5, tmax = 20,
+                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                 anchor_time = c(6, 8, 10, 12),
+                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                 gamlss_sigma = "~ cs(time, df = 1)",
+                 match_methods = "mahalanobis",
+                 weight = FALSE,
+                 match_alpha = 0.85,
+                 # match_number = 30,
+                 match_plot = FALSE,
+                 predict_plot = FALSE)
+
+plt0_4anchor <- people_like_thee2(train_data = train,
+                 test_data = test,
+                 new_data = test %>% group_by(id) %>% slice(1L),
+                 outcome_var = "ht",
+                 time_var = "time",
+                 id_var = "id",
+                 tmin = 0, tmax = 20,
+                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                 anchor_time = c(6, 8, 10, 12),
+                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                 gamlss_sigma = "~ cs(time, df = 1)",
+                 match_methods = "mahalanobis",
+                 weight = FALSE,
+                 match_alpha = 0.85,
+                 # match_number = 30,
+                 match_plot = FALSE,
+                 predict_plot = FALSE)
+
+plt1_4anchor <- people_like_thee2(train_data = train,
+                 test_data = test,
+                 new_data = test %>% filter(time <= 1) %>% group_by(id),
+                 outcome_var = "ht",
+                 time_var = "time",
+                 id_var = "id",
+                 tmin = 1, tmax = 20,
+                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                 anchor_time = c(6, 8, 10, 12),
+                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                 gamlss_sigma = "~ cs(time, df = 1)",
+                 match_methods = "mahalanobis",
+                 weight = FALSE,
+                 match_alpha = 0.85,
+                 # match_number = 30,
+                 match_plot = FALSE,
+                 predict_plot = FALSE)
+
+plt2_4anchor <- people_like_thee2(train_data = train,
+                 test_data = test,
+                 new_data = test %>% filter(time <= 2) %>% group_by(id),
+                 outcome_var = "ht",
+                 time_var = "time",
+                 id_var = "id",
+                 tmin = 2, tmax = 20,
+                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                 anchor_time = c(6, 8, 10, 12),
+                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                 gamlss_sigma = "~ cs(time, df = 1)",
+                 match_methods = "mahalanobis",
+                 weight = FALSE,
+                 match_alpha = 0.85,
+                 # match_number = 30,
+                 match_plot = FALSE,
+                 predict_plot = FALSE)
+
+plt3_4anchor <- people_like_thee2(train_data = train,
+                 test_data = test,
+                 new_data = test %>% filter(time <= 3) %>% group_by(id),
+                 outcome_var = "ht",
+                 time_var = "time",
+                 id_var = "id",
+                 tmin = 3, tmax = 20,
+                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                 anchor_time = c(6, 8, 10, 12),
+                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                 gamlss_sigma = "~ cs(time, df = 1)",
+                 match_methods = "mahalanobis",
+                 weight = FALSE,
+                 match_alpha = 0.85,
+                 # match_number = 30,
+                 match_plot = FALSE,
+                 predict_plot = FALSE)
+
+plt4_4anchor <- people_like_thee2(train_data = train,
+                 test_data = test,
+                 new_data = test %>% filter(time <= 4) %>% group_by(id),
+                 outcome_var = "ht",
+                 time_var = "time",
+                 id_var = "id",
+                 tmin = 4, tmax = 20,
+                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                 anchor_time = c(6, 8, 10, 12),
+                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                 gamlss_sigma = "~ cs(time, df = 1)",
+                 match_methods = "mahalanobis",
+                 weight = FALSE,
+                 match_alpha = 0.85,
+                 # match_number = 30,
+                 match_plot = FALSE,
+                 predict_plot = FALSE)
+
+plt5_3anchor <- people_like_thee2(train_data = train,
+                 test_data = test,
+                 new_data = test %>% filter(time <= 5) %>% group_by(id),
+                 outcome_var = "ht",
+                 time_var = "time",
+                 id_var = "id",
+                 tmin = 5, tmax = 20,
+                 bks_fixed = "1 + bs(time, knots = c(5, 10, 15), degree = 1) * sex",
+                 bks_random = "1 + bs(time, knots = c(5, 10, 15), degree = 1)",
+                 anchor_time = c(6, 9, 12),
+                 gamlss_formula = "ht ~ cs(time, df = 3)",
+                 gamlss_sigma = "~ cs(time, df = 1)",
+                 match_methods = "mahalanobis",
+                 weight = FALSE,
+                 match_alpha = 0.85,
+                 # match_number = 30,
+                 match_plot = FALSE,
+                 predict_plot = FALSE)
+
+# save(plt1_3anchor, plt1_3anchor, plt3_3anchor, plt4_3anchor, plt5_3anchor,
+#      plt1_4anchor, plt1_4anchor, plt3_4anchor, plt4_4anchor, plt5_4anchor,
+#      file = here::here("results", "M14_m090_plt12345_3anchor_4anchor.rda"))
+
+## 12.2 meanout -----------------------------------------------------------------
+meanout <- function(dataset,
+                    term = c("bias", "mse", "coverage50",
+                             "coverage80", "coverage90"),
+                    ...){
+  result <- dataset$centiles_observed %>%
+    mutate(mse = bias^2) %>%
+    dplyr::select(bias, mse, coverage50, coverage80, coverage90) %>%
+    colMeans(na.rm = TRUE)
+
+  return(result)
+}
+
+plt_sum <- function(plt_anchor) {
+  plt <- map(plt_anchor, ~try(meanout(.,))) %>%
+    map(~ (if (inherits(., "try-error")) NA else .)) %>%
+    map(~ as.data.frame(t(.))) %>%
+    bind_rows() %>%
+    mutate(rmse = sqrt(mse)) %>%
+    colMeans(na.rm = TRUE)
+
+  return(plt)
+}
+
+
+plt03 <- plt_sum(plt0_3anchor)
+plt13 <- plt_sum(plt1_3anchor)
+plt23 <- plt_sum(plt2_3anchor)
+plt33 <- plt_sum(plt3_3anchor)
+plt43 <- plt_sum(plt4_3anchor)
+plt53 <- plt_sum(plt5_3anchor)
+
+plt04 <- plt_sum(plt0_4anchor)
+plt14 <- plt_sum(plt1_4anchor)
+plt24 <- plt_sum(plt2_4anchor)
+plt34 <- plt_sum(plt3_4anchor)
+plt44 <- plt_sum(plt4_4anchor)
+plt54 <- plt_sum(plt5_4anchor)
+
+Ma0.85 <- bind_rows(plt03, plt13, plt23,
+                   plt33, plt43, plt53,
+                   plt04, plt14, plt24,
+                   plt34, plt44, plt54)
+
+save(Ma0.85, file = here::here("results", "M15_gender_m0.85_plt12345_3anchor_4anchor.rda"))
+
+```
+
+```
+

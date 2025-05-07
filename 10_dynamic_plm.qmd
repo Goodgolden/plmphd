@@ -177,8 +177,6 @@ summary(rePCA(bks_lmer))
 #                                 data = train2)
 save(bks_lmer, file = "results/P01_brokenstick_lmer_model.Rdata")
 
-View(bks_lmer)
-View(bks_lmer@u)
 
 ```
 
